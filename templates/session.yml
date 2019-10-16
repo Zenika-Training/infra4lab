@@ -1,0 +1,5 @@
+---
+
+session_date: {{ session_date }}
+session_client: {{ session_client }}
+session_name: {{ session_date }}-{{ training_name }}-{{ session_client }}

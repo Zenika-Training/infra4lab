@@ -1,0 +1,84 @@
+---
+
+- name: Create session
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - "{{ training_vars_file }}"
+  tags:
+    - create
+
+  tasks:
+
+    - name: Check current session
+      stat:
+        path: "{{ current_session_folder }}"
+      register: current_session_check
+    - block:
+        - name: Set session date
+          set_fact:
+            session_date: "{{ now(fmt='%Y-%m-%d') }}"
+        - name: Prompt session client
+          pause:
+            prompt: "Please enter session client (leave empty for inter)"
+          register: session_client_answer
+        - name: Set session client
+          set_fact:
+            session_client: "{{ session_client_answer.user_input | default('zenika', True) }}"
+        - name: Set session name
+          set_fact:
+            session_name: "{{ session_date }}-{{ training_name }}-{{ session_client }}"
+        - name: Create session folder
+          file:
+            path: "{{ training_folder }}/sessions/{{ session_name }}"
+            state: directory
+        - name: Create current session link
+          file:
+            path: "{{ current_session_folder }}"
+            src: "{{ session_name }}"
+            state: link
+        - name: Create session vars folder
+          file:
+            path: "{{ current_session_vars_folder }}"
+            state: directory
+        - name: Store session info
+          template:
+            src: session.yml
+            dest: "{{ current_session_vars_folder }}/main.yml"
+      when: not current_session_check.stat.exists
+    - block:
+        - name: Bootstrap trainees list
+          template:
+            src: trainees.yml
+            dest: "{{ current_session_vars_folder }}"
+        - name: Pause while listing trainees
+          pause:
+            prompt: "Please fill trainees list in file '{{ current_session_vars_folder }}/trainees.yml'"
+        - include_vars:
+            dir: "{{ current_session_vars_folder }}"
+      when: trainees is not defined
+
+
+- name: Destroy session
+  hosts: localhost
+  gather_facts: no
+  tags:
+    - never
+    - destroy
+
+  tasks:
+
+    - name: Check current session
+      stat:
+        path: "{{ current_session_folder }}"
+      register: current_session_check
+    - block:
+        - name: Delete session folder
+          file:
+            path: "{{ current_session_check.stat.lnk_source }}"
+            state: absent
+        - name: Delete current session
+          file:
+            path: "{{ current_session_folder }}"
+            state: absent
+      when: current_session_check.stat.exists
