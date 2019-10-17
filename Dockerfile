@@ -12,7 +12,8 @@ ENV BOTO_USE_ENDPOINT_HEURISTICS=True
 
 # Terraform
 ENV TERRAFORM_VERSION=0.12.10
-RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
+RUN apk add --no-cache ca-certificates \
+ && wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
  && unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin/ \
  && rm -f terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 
@@ -20,4 +21,4 @@ COPY . .
 
 VOLUME /training
 USER ansible
-ENTRYPOINT ["ansible-playbook", "--inventory", "localhost", "--inventory", "/training/sessions/current/hosts.yml", "infra.yml"]
+ENTRYPOINT ["ansible-playbook", "--inventory", "localhost", "--inventory", "/training/sessions/current/hosts.aws_ec2.yml", "infra.yml"]

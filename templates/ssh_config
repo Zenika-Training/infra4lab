@@ -1,0 +1,9 @@
+{% for host in groups[item.1] %}
+Host {{ hostvars[host].hostname }}
+    Hostname {{ hostvars[host].ansible_host }}
+{% endfor %}
+
+Host *
+  User centos
+  IdentityFile {{ item.1 }}.pem
+  StrictHostKeyChecking no

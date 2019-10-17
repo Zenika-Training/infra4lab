@@ -1,0 +1,7 @@
+{% for host in groups[item.1] %}
+{{ hostvars[host].hostname }} ansible_host={{ hostvars[host].ansible_host }} aws_public_dns={{ hostvars[host].public_dns_name }} aws_private_ip={{ hostvars[host].private_ip_address }}
+{% endfor %}
+
+[all:vars]
+ansible_user=centos
+ansible_ssh_private_key_file={{ item.1 }}.pem

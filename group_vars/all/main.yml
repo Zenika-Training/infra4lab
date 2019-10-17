@@ -6,3 +6,7 @@ training_vars_file: "{{ training_folder }}/training.yml"
 
 current_session_folder: "{{ training_folder }}/sessions/current"
 current_session_vars_folder: "{{ current_session_folder }}/group_vars/all"
+
+aws_region: eu-west-3
+
+users: "{{ ['trainer'] | union(trainees | default({}) | map(attribute='username') | list ) }}"

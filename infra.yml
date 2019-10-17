@@ -58,6 +58,42 @@
             dir: "{{ current_session_vars_folder }}"
       when: trainees is not defined
 
+- name: Create VMs
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - "{{ training_vars_file }}"
+  tags:
+    - create
+
+  tasks:
+
+    - name: Create session terraform folder
+      file:
+        path: "{{ current_session_folder }}/terraform"
+        state: directory
+    - name: Generate terraform plan file
+      template:
+        src: main.tf
+        dest: "{{ current_session_folder }}/terraform/main.tf"
+    - name: Create VMs
+      terraform:
+        project_path: "{{ current_session_folder }}/terraform/"
+        state: present
+        force_init: yes
+
+    - name: Create session inventory
+      template:
+        src: session_hosts.aws_ec2.yml
+        dest: "{{ current_session_folder }}/hosts.aws_ec2.yml"
+    - name: Reload inventory
+      meta: refresh_inventory
+    - name: Create trainees configs
+      template:
+        src: "{{ item.0 }}"
+        dest: "{{ current_session_folder }}/users/{{ item.1 }}/{{ item.0 }}"
+      loop: "{{ ['ssh_config', 'hosts'] | product(users) | list }}"
+
 
 - name: Destroy session
   hosts: localhost
@@ -73,6 +109,10 @@
         path: "{{ current_session_folder }}"
       register: current_session_check
     - block:
+        - name: Destroy VMs
+          terraform:
+            project_path: "{{ current_session_folder }}/terraform/"
+            state: absent
         - name: Delete session folder
           file:
             path: "{{ current_session_check.stat.lnk_source }}"

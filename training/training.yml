@@ -1,3 +1,12 @@
 ---
 
 training_name: test
+
+#aws_region: eu-west-3
+aws_instances:
+  - name: node0
+    type: t2.micro
+  - name: node1
+    type: t2.micro
+  - name: node2
+    type: t2.micro
