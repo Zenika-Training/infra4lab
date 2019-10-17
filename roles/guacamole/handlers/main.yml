@@ -1,0 +1,15 @@
+---
+
+- name: Restart tomcat service
+  service:
+    name: tomcat
+    state: restarted
+  listen:
+    - Restart tomcat
+
+- name: Restart guacd service
+  service:
+    name: guacd
+    state: restarted
+  listen:
+    - Restart guacd

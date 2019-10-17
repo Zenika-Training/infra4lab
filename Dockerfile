@@ -6,7 +6,7 @@ WORKDIR /work
 
 # Ansible
 COPY requirements.txt .
-RUN apk add --no-cache python3 py3-jinja2 py3-yaml py3-cryptography py3-urllib3 py3-docutils py3-dateutil \
+RUN apk add --no-cache openssh python3 py3-jinja2 py3-yaml py3-cryptography py3-urllib3 py3-docutils py3-dateutil \
  && pip3 --no-cache-dir install --requirement requirements.txt
 ENV BOTO_USE_ENDPOINT_HEURISTICS=True
 

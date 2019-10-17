@@ -1,0 +1,9 @@
+---
+
+- name: Install EPEL repos
+  yum:
+    name: epel-release
+
+- name: Install base tools
+  yum:
+    name: "{{ base_tools }}"

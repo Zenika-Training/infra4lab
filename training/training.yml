@@ -10,3 +10,8 @@ aws_instances:
     type: t2.micro
   - name: node2
     type: t2.micro
+
+roles:
+  - name: guacamole
+    target:
+      - node0

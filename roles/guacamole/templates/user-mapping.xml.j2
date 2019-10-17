@@ -1,0 +1,15 @@
+<user-mapping>
+
+    <authorize
+            username="zenika"
+            password="{{ session_name | hash('md5') }}"
+            encoding="md5">
+        <connection name="centos">
+            <protocol>rdp</protocol>
+            <param name="hostname">localhost</param>
+            <param name="username">centos</param>
+            <param name="password">{{ aws_password }}</param>
+        </connection>
+    </authorize>
+
+</user-mapping>

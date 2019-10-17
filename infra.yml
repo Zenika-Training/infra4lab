@@ -88,11 +88,39 @@
         dest: "{{ current_session_folder }}/hosts.aws_ec2.yml"
     - name: Reload inventory
       meta: refresh_inventory
+    - name: Reload group_vars
+      include_vars:
+        dir: "{{ current_session_vars_folder }}"
+      delegate_to: "{{ item }}"
+      delegate_facts: true
+      loop: "{{ groups.all }}"
     - name: Create trainees configs
       template:
         src: "{{ item.0 }}"
         dest: "{{ current_session_folder }}/users/{{ item.1 }}/{{ item.0 }}"
       loop: "{{ ['ssh_config', 'hosts'] | product(users) | list }}"
+
+
+- name: Setup VMs
+  hosts: all:!localhost
+  gather_facts: yes
+  become: yes
+  vars_files:
+    - "{{ training_vars_file }}"
+  tags:
+    - setup
+
+  tasks:
+
+    - name: Install base on hosts
+      include_role:
+        name: base
+
+    - name: Execute roles on hosts
+      include_role:
+        name: "{{ item.name }}"
+      when: group_names | union(['all']) | intersect(item.target)
+      loop: "{{ roles }}"
 
 
 - name: Destroy session

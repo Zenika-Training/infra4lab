@@ -1,0 +1,153 @@
+---
+
+- name: Setup Google Chrome repo
+  yum_repository:
+    name: google-chrome
+    description: google-chrome
+    baseurl: http://dl.google.com/linux/chrome/rpm/stable/x86_64
+    gpgcheck: true
+    gpgkey: https://dl.google.com/linux/linux_signing_key.pub
+    enabled: true
+
+- name: Setup vscode repo
+  yum_repository:
+    name: vscode
+    description: Visual Studio Code
+    baseurl: https://packages.microsoft.com/yumrepos/vscode
+    gpgcheck: true
+    gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+
+- name: Install UI tools
+  yum:
+    name:
+      - firefox
+      - xrdp
+      - google-chrome-stable
+      - code
+      - "@Xfce"
+
+- name: Ensure xrdp daemon is started and enabled
+  service:
+    name: xrdp
+    state: started
+    enabled: true
+
+- name: Install guacd
+  yum:
+    name:
+      - "guacd-{{ guacamole_version }}"
+      - "libguac-client-rdp-{{ guacamole_version }}"
+    enablerepo: epel-testing
+    state: present
+
+- name: Install tomcat and dependencies
+  yum:
+    name:
+      - tomcat
+      - tomcat-native
+      - python2-cryptography
+    state: present
+
+- name: Generate tomcat key
+  openssl_privatekey:
+    path: /etc/tomcat/tomcat.key
+    owner: tomcat
+    group: tomcat
+    mode: 0400
+  notify:
+    - Restart tomcat
+
+- name: Generate tomcat CSR
+  openssl_csr:
+    path: /etc/tomcat/tomcat.csr
+    privatekey_path: /etc/tomcat/tomcat.key
+    common_name: "{{ public_dns_name }}"
+    subject_alt_name:
+      - "DNS:{{ public_dns_name }}"
+      - "IP:{{ ansible_host }}"
+    owner: tomcat
+    group: tomcat
+
+- name: Generate tomcat certificate
+  openssl_certificate:
+    path: /etc/tomcat/tomcat.crt
+    csr_path: /etc/tomcat/tomcat.csr
+    privatekey_path: /etc/tomcat/tomcat.key
+    selfsigned_not_after: +5d
+    provider: selfsigned
+    owner: tomcat
+    group: tomcat
+  notify:
+    - Restart tomcat
+
+- name: Setup tomcat
+  copy:
+    src: tomcat-server.xml
+    dest: /etc/tomcat/server.xml
+    owner: tomcat
+    group: tomcat
+  notify:
+    - Restart tomcat
+
+- name: Install guacamole-client webapp
+  get_url:
+    url: "http://archive.apache.org/dist/guacamole/{{ guacamole_version }}/binary/guacamole-{{ guacamole_version }}.war"
+    dest: /var/lib/tomcat/webapps/ROOT.war
+    checksum: "{{ guacamole_client_checksum }}"
+    owner: tomcat
+    group: tomcat
+  notify:
+    - Restart tomcat
+
+- name: Create guacamole conf dir
+  file:
+    path: /etc/guacamole/
+    state: directory
+    owner: tomcat
+    group: tomcat
+
+- name: Setup guacamole authentication
+  template:
+    src: user-mapping.xml.j2
+    dest: /etc/guacamole/user-mapping.xml
+    owner: tomcat
+    group: tomcat
+  notify:
+    - Restart tomcat
+    - Restart guacd
+
+- name: Setup Xclients
+  lineinfile:
+    path: /home/centos/.Xclients
+    create: true
+    line: xfce4-session
+    state: present
+    owner: centos
+    group: centos
+    mode: 0775
+
+- name: Setup default panel
+  lineinfile:
+    path: /home/centos/.bash_profile
+    line: export XFCE_PANEL_MIGRATE_DEFAULT=1
+
+- name: Setup remote user password for RDP access
+  user:
+    name: centos
+    password: "{{ aws_password | password_hash() }}"
+  changed_when: false
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Launch and enable tomcat service
+  service:
+    name: tomcat
+    state: started
+    enabled: true
+
+- name: Launch and enable guacd service
+  service:
+    name: guacd
+    state: started
+    enabled: true
