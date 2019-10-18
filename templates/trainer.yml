@@ -1,0 +1,4 @@
+---
+trainer:
+  fullname: {{ trainer.fullname }}
+  email: {{ trainer.email }}

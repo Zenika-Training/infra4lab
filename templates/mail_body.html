@@ -1,0 +1,56 @@
+<p>Hi {{ trainee.full_name }}!</p>
+
+<p>Welcome to Zenika training.</p>
+
+<p><strong>Do not delete this email until the training is done and completed.</strong></p>
+
+<p>Here are your AWS instances:</p>
+<ul>
+{% for host in groups[trainee.username] %}
+  <li>
+    <ul style="list-style: none;padding-left: 0px;">
+      <li style="margin-left: 0px;">Name: {{ hostvars[host].hostname }}</li>
+      <li style="margin-left: 0px;">Public IP: {{ hostvars[host].ansible_host }}</li>
+      <li style="margin-left: 0px;">Public DNS: {{ hostvars[host].public_dns_name }}</li>
+      <li style="margin-left: 0px;">Private IP: {{ hostvars[host].private_ip_address }}</li>
+    </ul>
+  </li>
+{% endfor %}
+</ul>
+
+<p>
+  In attachment, you can find an SSH private key file '<em>{{ trainee.username }}.pem</em>'.
+  <br/>
+  Please download it and change its permissions to <code>0400</code>.
+  <br/>
+  You can then connect to an instance using the command: <code>ssh -i {{ trainee.username }}.pem centos@&lt;PUBLIC_IP&gt;</code>.
+</p>
+
+<p>
+  For your convenience, you can find in attachment an SSH config file '<em>ssh_config</em>'.
+  <br/>
+  After downloading it next to your SSH private key file, you can connect to an instance with the command: <code>ssh -F ssh_config &lt;NAME&gt;</code>.
+</p>
+
+{% if 'guacamole' in roles | map(attribute='name') %}
+<p>You can also use an browser-embedded desktop by connecting (ignore the certificate warning) to:</p>
+<ul>
+{% set guacamole_instances = (roles | selectattr('name', 'eq', 'guacamole') | first).target %}
+{% if guacamole_instances == 'all' %}
+{% set guacamole_instances = aws_instances | map(attribute='name') %}
+{% endif %}
+{% for instance in guacamole_instances %}
+  <li>
+    <a href="https://{{ hostvars[session_name + '-' + trainee.username + '-' + instance].public_dns_name }}:8999">https://{{ hostvars[session_name + '-' + trainee.username + '-' + instance].public_dns_name }}:8999</a>
+  </li>
+{% endfor %}
+</ul>
+<p>With credentials:</p>
+<ul>
+  <li>login: <code>zenika</code></li>
+  <li>password: <code>{{ session_name }}</code></li>
+</ul>
+<p>(If the display size is small, do a force refresh)</p>
+{% endif %}
+
+<p>Have a good training!</p>

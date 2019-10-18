@@ -21,6 +21,15 @@ Existing roles:
 
 Create any extra role you want in a `roles` folder in your training.
 
+## Configure Amazon Simple Email Service
+
+Email to trainees is sent using [Amazon Simple Email Service](https://aws.amazon.com/ses/).
+
+To be able to use it, you need to:
+
+- [move out of the Amazon SES Sandbox](https://docs.aws.amazon.com/en_pv/ses/latest/DeveloperGuide/request-production-access.html)
+- [verify your `@zenika.com` email address](https://docs.aws.amazon.com/en_pv/ses/latest/DeveloperGuide/verify-email-addresses-procedure.html) (if it doesn't work right away as the `zenika.com` domain should be already [validated](https://docs.aws.amazon.com/en_pv/ses/latest/DeveloperGuide/verify-domain-procedure.html))
+
 ## Create VMs
 
 Create VMs for lab:
@@ -44,6 +53,12 @@ To launch only the instances setup, you can use the tag `setup`:
 
 ```shell
 ./infra4lab.sh --tags setup
+```
+
+To only send the instances email, you can use the tag `email`:
+
+```shell
+./infra4lab.sh --tags email
 ```
 
 ## Destroy VMs

@@ -1,2 +1,5 @@
 # Vi
 .*.swp
+
+# Python
+*.pyc

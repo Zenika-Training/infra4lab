@@ -81,6 +81,7 @@
         project_path: "{{ current_session_folder }}/terraform/"
         state: present
         force_init: yes
+      register: terraform
 
     - name: Create session inventory
       template:
@@ -123,6 +124,61 @@
         role_vars: "{{ item.vars | default({}) }}"
       when: group_names | union(['all']) | intersect(item.target)
       loop: "{{ roles }}"
+
+- name: Send hosts info
+  hosts: localhost
+  gather_facts: yes
+  vars_files:
+    - "{{ training_vars_file }}"
+  tags:
+    - email
+
+  tasks:
+
+    - name: Load trainer info
+      include_vars:
+        file: "{{ trainer_vars_file }}"
+      failed_when: False
+    - block:
+        - name: Prompt trainer name
+          pause:
+            prompt: "Please enter your full name (in the form 'Firstname Lastname')"
+          register: trainer_fullname_answer
+        - name: Prompt trainer email
+          pause:
+            prompt: "Please enter your email (in the form 'firstname.lastname@zenika.com')"
+          register: trainer_email_answer
+        - name: Set trainer info
+          set_fact:
+            trainer:
+              fullname: "{{ trainer_fullname_answer.user_input }}"
+              email: "{{ trainer_email_answer.user_input }}"
+      when: trainer is not defined or 'fullname' not in trainer or 'email' not in trainer
+    - name: Store trainer info
+      template:
+        src: trainer.yml
+        dest: "{{ trainer_vars_file }}"
+
+    - block:
+        - name: Send hosts info
+          mail:
+            host: "email-smtp.{{ aws_ses_region }}.amazonaws.com"
+            port: 587
+            username: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+            password: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') | aws_ses_smtp_key(aws_ses_region) }}"
+            from: "{{ trainer.fullname | default('Zenika trainer') }} <{{ trainer.email }}>"
+            to: "{{ trainee.full_name }} <{{ trainee.email }}>"
+            subject: "Zenika - Training {{ session_name }} - Connection data"
+            body: "{{ lookup('template', './templates/mail_body.html') }}"
+            subtype: html
+            attach:
+              - "{{ current_session_folder }}/users/{{ trainee.username }}/{{ trainee.username }}.pem"
+              - "{{ current_session_folder }}/users/{{ trainee.username }}/ssh_config"
+              - "{{ current_session_folder }}/users/{{ trainee.username }}/hosts"
+          loop: "{{ [{'username': 'trainer', 'full_name': trainer.fullname | default('Zenika trainer'), 'email': trainer.email}] | union(trainees | default([])) | list }}"
+          loop_control:
+            loop_var: trainee
+      when: (terraform is defined and terraform is changed) or 'email' in ansible_run_tags
 
 
 - name: Destroy session

@@ -3,11 +3,13 @@
 training_folder: /training
 
 training_vars_file: "{{ training_folder }}/training.yml"
+trainer_vars_file: "{{ training_folder }}/trainer.yml"
 
 current_session_folder: "{{ training_folder }}/sessions/current"
 current_session_vars_folder: "{{ current_session_folder }}/group_vars/all"
 
 aws_region: eu-west-3
+aws_ses_region: eu-west-1
 aws_password: zenika
 
 users: "{{ ['trainer'] | union(trainees | default({}) | map(attribute='username') | list ) }}"
