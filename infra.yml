@@ -119,6 +119,8 @@
     - name: Execute roles on hosts
       include_role:
         name: "{{ item.name }}"
+      vars:
+        role_vars: "{{ item.vars | default({}) }}"
       when: group_names | union(['all']) | intersect(item.target)
       loop: "{{ roles }}"
 

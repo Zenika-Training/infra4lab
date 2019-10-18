@@ -7,3 +7,9 @@
 - name: Install base tools
   yum:
     name: "{{ base_tools }}"
+
+- name: Add /usr/local/bin in sudo PATH
+  lineinfile:
+    path: /etc/sudoers
+    regexp: '^Defaults *secure_path'
+    line: 'Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin'

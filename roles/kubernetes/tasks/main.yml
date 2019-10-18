@@ -1,0 +1,63 @@
+---
+
+
+- name: Setup Kubernetes repo
+  yum_repository:
+    name: kubernetes
+    description: Kubernetes
+    baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+    enabled: True
+    gpgcheck: True
+    repo_gpgcheck: True
+    gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+- name: Install kubelet
+  block:
+    - name: Install kubectl
+      yum:
+        name:
+         - "kubectl-{{ kubernetes_version }}*"
+    - name: Generate kubectl completion file
+      shell: |
+        kubectl completion bash > /etc/bash_completion.d/kubectl
+      args:
+        creates: /etc/bash_completion.d/kubectl
+  when: install_kubectl
+
+- name: Install kubeadm
+  block:
+    - name: Install kubeadm
+      yum:
+        name:
+        - "kubeadm-{{ kubernetes_version }}*"
+    - name: Generate kubeadm completion file
+      shell: |
+        kubeadm completion bash > /etc/bash_completion.d/kubeadm
+      args:
+        creates: /etc/bash_completion.d/kubeadm
+  when: install_kubeadm
+
+- name: Install kubelet
+  yum:
+    name:
+     - "kubelet-{{ kubernetes_version }}*"
+  when: install_kubelet
+
+- name: Install minikube
+  block:
+    - name: Download minikube
+      get_url:
+        url: "https://storage.googleapis.com/minikube/releases/{{ minikube_version }}/minikube-linux-amd64"
+        dest: /usr/local/bin/minikube
+        mode: 0755
+    - name: Generate completion file
+      shell: |
+        minikube completion bash > /etc/bash_completion.d/minikube
+      args:
+        creates: /etc/bash_completion.d/minikube
+    - name: Setup vm-driver none env vars
+      copy:
+        src: minikube.sh
+        dest: /etc/profile.d/minikube.sh
+        mode: 0644
+  when: install_minikube

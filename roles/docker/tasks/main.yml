@@ -1,0 +1,31 @@
+---
+
+- name: Install Docker dependencies
+  yum:
+    name:
+     - device-mapper-persistent-data
+     - lvm2
+
+- name: Setup Docker repo
+  get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+
+- name: Install Docker
+  yum:
+    name:
+      - "docker-ce-{{ docker_version }}*"
+      - "docker-ce-cli-{{ docker_version }}*"
+      - containerd.io
+
+- name: Ensure docker daemon is started and enabled
+  service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Add centos user to docker group
+  user:
+    name: centos
+    groups:
+      - docker

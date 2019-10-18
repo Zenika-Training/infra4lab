@@ -15,3 +15,15 @@ roles:
   - name: guacamole
     target:
       - node0
+  - name: docker
+    target:
+      - node0
+    vars:
+      docker_version: 18.09
+  - name: kubernetes
+    target:
+      - node0
+    vars:
+      kubernetes_version: 1.16
+      install_kubeadm: True
+      install_minikube: True

@@ -1,0 +1,9 @@
+---
+
+kubernetes_version: "{{ role_vars.kubernetes_version | default() }}"
+install_kubectl: "{{ role_vars.install_kubectl | default(True) }}"
+install_kubeadm: "{{ role_vars.install_kubeadm | default(False) }}"
+install_kubelet: "{{ role_vars.install_kubelet | default(False) }}"
+
+minikube_version: "{{ role_vars.minikube_version | default('latest') }}"
+install_minikube: "{{ role_vars.install_minikube | default(False) }}"

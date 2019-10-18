@@ -11,10 +11,13 @@ Create a `training.yml` file inspired on [`training/training.yml`](training/trai
 - `roles`: roles to apply to each instances, list of objects with:
   - `name`: name of the role to apply
   - `target`: list of instance name to apply the role to, use `all` to apply to all instances
+  - `vars`: dict of variables for the role. See each role documentation to know them
 
 Existing roles:
 
 - [`guacamole`](roles/guacamole/README.md)
+- [`docker`](roles/docker/README.md)
+- [`kubernetes`](roles/kubernetes/README.md)
 
 Create any extra role you want in a `roles` folder in your training.
 
