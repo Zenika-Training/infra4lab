@@ -15,6 +15,9 @@ roles:
   - name: guacamole
     target:
       - node0
+  - name: workspaces
+    target:
+      - node0
   - name: docker
     target:
       - node0

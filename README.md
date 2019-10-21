@@ -16,6 +16,7 @@ Create a `training.yml` file inspired on [`training/training.yml`](training/trai
 Existing roles:
 
 - [`guacamole`](roles/guacamole/README.md)
+- [`workspaces`](roles/workspaces/README.md)
 - [`docker`](roles/docker/README.md)
 - [`kubernetes`](roles/kubernetes/README.md)
 

@@ -1,0 +1,3 @@
+---
+
+workspaces_folder: "{{ role_vars.workspaces_folder | default('/workspaces') }}"
