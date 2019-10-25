@@ -1,6 +1,7 @@
 # Configure the AWS Provider
 provider "aws" {
   region = "{{ aws_region }}"
+  allowed_account_ids = ["{{ aws_account_id }}"]
 }
 
 data "aws_ami" "centos" {
