@@ -31,6 +31,16 @@ To be able to use it, you need to:
 - [move out of the Amazon SES Sandbox](https://docs.aws.amazon.com/en_pv/ses/latest/DeveloperGuide/request-production-access.html)
 - [verify your `@zenika.com` email address](https://docs.aws.amazon.com/en_pv/ses/latest/DeveloperGuide/verify-email-addresses-procedure.html) (if it doesn't work right away as the `zenika.com` domain should be already [validated](https://docs.aws.amazon.com/en_pv/ses/latest/DeveloperGuide/verify-domain-procedure.html))
 
+## Session extra configuration
+
+When asked for session extra config, you can fill `sessions/current/group_vars/extra.yml`.
+
+You can also fill it afterwards and relaunch the tool.
+
+Possible configurations are:
+
+- `authorized_ips`: a list of IP addresses to authorize to access VMs
+
 ## Create VMs
 
 Create VMs for lab:
