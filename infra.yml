@@ -161,11 +161,7 @@
 
     - block:
         - name: Send hosts info
-          mail:
-            host: "email-smtp.{{ aws_ses_region }}.amazonaws.com"
-            port: 587
-            username: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
-            password: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') | aws_ses_smtp_key(aws_ses_region) }}"
+          aws_ses_mail:
             from: "{{ trainer.fullname | default('Zenika trainer') }} <{{ trainer.email }}>"
             to: "{{ trainee.full_name }} <{{ trainee.email }}>"
             subject: "Zenika - Training {{ session_name }} - Connection data"
@@ -175,6 +171,7 @@
               - "{{ current_session_folder }}/users/{{ trainee.username }}/{{ trainee.username }}.pem"
               - "{{ current_session_folder }}/users/{{ trainee.username }}/ssh_config"
               - "{{ current_session_folder }}/users/{{ trainee.username }}/hosts"
+            region: "{{ aws_ses_region }}"
           loop: "{{ [{'username': 'trainer', 'full_name': trainer.fullname | default('Zenika trainer'), 'email': trainer.email}] | union(trainees | default([])) | list }}"
           loop_control:
             loop_var: trainee
