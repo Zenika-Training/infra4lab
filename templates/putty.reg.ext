@@ -1,0 +1,12 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Software\SimonTatham\PuTTY\Sessions]
+
+{% for host in groups[item.1] %}
+[HKEY_CURRENT_USER\Software\SimonTatham\PuTTY\Sessions\{{ hostvars[host].hostname }}]
+"HostName"="{{ hostvars[host].ansible_host }}"
+"UserName"="centos"
+"NoApplicationKeys"=dword:00000001
+"ScrollbackLines"=dword:7fffffff
+
+{% endfor %}

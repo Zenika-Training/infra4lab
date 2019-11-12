@@ -25,6 +25,11 @@
   <br/>
   You can then connect to an instance using the command: <code>ssh -i {{ trainee.username }}.pem centos@&lt;PUBLIC_IP&gt;</code>.
 </p>
+<p>If you are on Windows using PuTTY, you have also:</p>
+<ul>
+  <li>a <em>Regedit</em> file '<em>putty.reg.ext</em>' to import sessions by removing the '.ext' extension and opening it.</li>
+  <li>a PuTTY private key file '<em>{{ trainee.username }}.ppk</em>' to import in <em>Pageant</em> by opening it.</li>
+</ul>
 
 <p>
   For your convenience, you can find in attachment an SSH config file '<em>ssh_config</em>'.
