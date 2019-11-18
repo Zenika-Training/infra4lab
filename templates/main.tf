@@ -6,6 +6,10 @@ provider "aws" {
 
 data "aws_caller_identity" "current" {}
 
+data "aws_availability_zones" "availability_zones" {
+  state = "available"
+}
+
 data "aws_ami" "centos" {
   most_recent = true
   owners = ["679593333241"] # CentOS
@@ -30,13 +34,33 @@ data "aws_ami" "centos" {
     name   = "root-device-type"
     values = ["ebs"]
   }
+}
 
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+
+  name = "vpc"
+  cidr = "10.0.0.0/16"
+
+  azs             = "${data.aws_availability_zones.availability_zones.names}"
+  public_subnets  = [for az in data.aws_availability_zones.availability_zones.zone_ids : cidrsubnet("10.0.0.0/16", 8, 101 + index(data.aws_availability_zones.availability_zones.zone_ids, az))]
+
+  enable_nat_gateway   = true
+  enable_vpn_gateway   = false
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Name   = "{{ session_name }}"
+    Caller = "${data.aws_caller_identity.current.arn}"
+  }
 }
 
 {% set cidr_blocks = current_session_authorized_ips | map('regex_replace', '$', '/32') | list | to_json %}
 resource "aws_security_group" "default_sg" {
-  name        = "default-sg-{{ session_name }}"
-  description = "Allow inbound traffic from any IP"
+  name        = "{{ session_name }}"
+  description = "Allow inbound traffic"
+  vpc_id      = "${module.vpc.vpc_id}"
 
   {% for port in base_open_ports | union(open_ports | default([])) %}
   ingress {
@@ -53,7 +77,7 @@ resource "aws_security_group" "default_sg" {
     cidr_blocks = {{ cidr_blocks }}
   }
   tags = {
-    Name   = "Default {{ session_name }}"
+    Name   = "{{ session_name }}"
     Caller = "${data.aws_caller_identity.current.arn}"
   }
 }
@@ -80,10 +104,11 @@ resource "aws_key_pair" "{{ user }}_aws_keypair" {
 
 {% for instance in aws_instances %}
 resource "aws_instance" "{{ user }}_{{ instance.name }}" {
-  key_name        = "${aws_key_pair.{{ user }}_aws_keypair.key_name}"
-  ami             = "${data.aws_ami.centos.id}"
-  instance_type   = "{{ instance.type }}"
-  security_groups = ["${aws_security_group.default_sg.name}", "default"]
+  key_name               = "${aws_key_pair.{{ user }}_aws_keypair.key_name}"
+  ami                    = "${data.aws_ami.centos.id}"
+  instance_type          = "{{ instance.type }}"
+  vpc_security_group_ids = ["${aws_security_group.default_sg.id}", "${module.vpc.default_security_group_id}"]
+  subnet_id              = "${module.vpc.public_subnets[{{ loop.index0 }} % length(module.vpc.public_subnets)]}"
 
   tags = {
     Name     = "{{ session_name }}-{{ user }}-{{ instance.name }}"
