@@ -60,6 +60,14 @@ resource "aws_security_group" "default_sg" {
     protocol    = "tcp"
     cidr_blocks = {{ cidr_blocks }}
   }
+  {% for port in open_ports | default([]) %}
+  ingress {
+    from_port   = {{ port }}
+    to_port     = {{ port }}
+    protocol    = "tcp"
+    cidr_blocks = {{ cidr_blocks }}
+  }
+  {% endfor %}
   ingress {
     from_port   = 8
     to_port     = 0

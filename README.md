@@ -41,6 +41,7 @@ Create a `training.yml` file inspired on [`training/training.yml`](training/trai
   - `name`: name of the role to apply
   - `target`: list of instance name to apply the role to, use `all` to apply to all instances
   - `vars`: dict of variables for the role. See each role documentation to know them
+- `open_ports`: optionnal ports to open (other than `22`, `80`, `443` and `8000-8999`)
 
 Existing roles:
 
