@@ -1,0 +1,103 @@
+---
+
+- name: Setup Google Chrome repo
+  yum_repository:
+    name: google-chrome
+    description: google-chrome
+    baseurl: http://dl.google.com/linux/chrome/rpm/stable/x86_64
+    gpgcheck: true
+    gpgkey: https://dl.google.com/linux/linux_signing_key.pub
+    enabled: true
+
+- name: Install Chrome
+  yum:
+    name: google-chrome-stable
+
+- name: Compute latest version
+  block:
+    - name: Get latest release
+      uri:
+        url: https://api.github.com/repos/cdr/code-server/releases/latest
+      register: code_server_latest
+    - name: Compute latest version
+      set_fact:
+        code_server_version: "{{ code_server_latest.json.tag_name }}"
+  when: not code_server_version
+
+- name: Extract code-server
+  unarchive:
+    src: "https://github.com/cdr/code-server/releases/download/{{ code_server_version }}/code-server{{ code_server_version }}-linux-x86_64.tar.gz"
+    remote_src: yes
+    dest: /usr/local/bin
+    exclude:
+      - README.md
+      - LICENSE.txt
+      - ThirdPartyNotices.txt
+    extra_opts:
+      - --strip-components
+      - '1'
+    creates: /usr/local/bin/code-server
+
+- name: Install openssl dependency
+  yum:
+    name: python2-cryptography
+    state: present
+
+- name: Generate code-server key
+  openssl_privatekey:
+    path: ~centos/.code-server.key
+    mode: 0400
+  become: no
+  notify:
+    - Restart code-server
+
+- name: Generate code-server CSR
+  openssl_csr:
+    path: ~centos/.code-server.csr
+    privatekey_path: ~centos/.code-server.key
+    common_name: "{{ public_dns_name }}"
+    subject_alt_name:
+      - "DNS:{{ public_dns_name }}"
+      - "IP:{{ ansible_host }}"
+  become: no
+
+- name: Generate code-server certificate
+  openssl_certificate:
+    path: ~centos/.code-server.crt
+    csr_path: ~centos/.code-server.csr
+    privatekey_path: ~centos/.code-server.key
+    selfsigned_not_after: +5d
+    provider: selfsigned
+  become: no
+  notify:
+    - Restart code-server
+
+- name: Install code-server service
+  template:
+    src: code-server.service
+    dest: /usr/lib/systemd/system/code-server.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Reload systemd
+    - Restart code-server
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Launch and enable code-server service
+  service:
+    name: code-server
+    state: started
+    enabled: true
+
+- name: Install extensions
+  command: |
+    code-server --install-extension {{ item }}
+  environment:
+    SERVICE_URL: https://marketplace.visualstudio.com/_apis/public/gallery
+  become: no
+  register: this
+  changed_when: "'is already installed' not in this.stdout"
+  loop: "{{ code_server_extensions }}"

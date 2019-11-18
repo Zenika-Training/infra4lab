@@ -1,0 +1,8 @@
+---
+
+code_server_version: "{{ role_vars.code_server_version | default(None) }}"
+
+code_server_base_extensions:
+  - auchenberg.vscode-browser-preview
+
+code_server_extensions: "{{ role_vars.code_server_extensions | default([]) | union(code_server_base_extensions) | list }}"

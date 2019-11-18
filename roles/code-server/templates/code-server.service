@@ -1,0 +1,24 @@
+[Unit]
+Description = code-server
+Documentation = https://github.com/cdr/code-server
+After = network-online.target remote-fs.target nss-lookup.target
+
+Wants = network-online.target
+
+[Service]
+SyslogIdentifier = code-server
+User = centos
+Type = simple
+Environment = PASSWORD={{ session_name }}
+Environment = SERVICE_URL=https://marketplace.visualstudio.com/_apis/public/gallery
+ExecStart = /usr/local/bin/code-server --port 8998 \
+              --cert /home/centos/.code-server.crt --cert-key /home/centos/.code-server.key \
+              --auth password \
+              --disable-telemetry
+Restart = on-failure
+#RestartSec = 10
+#StartLimitBurst = 3
+#StartLimitInterval = 600
+
+[Install]
+WantedBy = multi-user.target
