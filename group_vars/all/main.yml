@@ -7,7 +7,10 @@ trainer_vars_file: "{{ training_folder }}/trainer.yml"
 
 current_session_folder: "{{ training_folder }}/sessions/current"
 current_session_vars_folder: "{{ current_session_folder }}/group_vars/all"
+current_session_local_ip: "{{ lookup('pipe', 'wget -qO- ifconfig.me') }}"
+current_session_authorized_ips: "{{ authorized_ips | default([]) | union([current_session_local_ip]) | list | sort }}"
 
+aws_account_id: '682417792030'
 aws_region: eu-west-3
 aws_ses_region: eu-west-1
 aws_password: zenika

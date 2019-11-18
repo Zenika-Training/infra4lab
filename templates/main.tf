@@ -1,6 +1,7 @@
 # Configure the AWS Provider
 provider "aws" {
   region = "{{ aws_region }}"
+  allowed_account_ids = ["{{ aws_account_id }}"]
 }
 
 data "aws_ami" "centos" {
@@ -30,6 +31,7 @@ data "aws_ami" "centos" {
 
 }
 
+{% set cidr_blocks = current_session_authorized_ips | map('regex_replace', '$', '/32') | list | to_json %}
 resource "aws_security_group" "default_sg" {
   name        = "default-sg-{{ session_name }}"
   description = "Allow inbound traffic from any IP"
@@ -38,31 +40,39 @@ resource "aws_security_group" "default_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = {{ cidr_blocks }}
   }
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = {{ cidr_blocks }}
   }
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = {{ cidr_blocks }}
   }
   ingress {
     from_port   = 8000
     to_port     = 8999
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = {{ cidr_blocks }}
   }
+  {% for port in open_ports | default([]) %}
+  ingress {
+    from_port   = {{ port }}
+    to_port     = {{ port }}
+    protocol    = "tcp"
+    cidr_blocks = {{ cidr_blocks }}
+  }
+  {% endfor %}
   ingress {
     from_port   = 8
     to_port     = 0
     protocol    = "icmp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = {{ cidr_blocks }}
   }
   tags = {
     Name = "Default {{ session_name }}"

@@ -54,9 +54,20 @@
         - name: Pause while listing trainees
           pause:
             prompt: "Please fill trainees list in file '{{ current_session_vars_folder }}/trainees.yml'"
-        - include_vars:
-            dir: "{{ current_session_vars_folder }}"
       when: trainees is not defined
+    - name: Create session extra config file
+      file:
+        path: "{{ current_session_vars_folder }}/extra.yml"
+        state: touch
+        access_time: preserve
+        modification_time: preserve
+      register: session_extra_config
+    - name: Pause while setting session extra config
+      pause:
+        prompt: "Please fill session extra config in file '{{ current_session_vars_folder }}/extra.yml'"
+      when: session_extra_config is changed
+    - include_vars:
+        dir: "{{ current_session_vars_folder }}"
 
 - name: Create VMs
   hosts: localhost
