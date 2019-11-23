@@ -16,3 +16,10 @@ aws_ses_region: eu-west-1
 aws_password: zenika
 
 users: "{{ ['trainer'] | union(trainees | default({}) | map(attribute='username') | list ) }}"
+
+base_open_ports:
+  - 22
+  - 80
+  - 443
+  - from: 8000
+    to: 8999

@@ -87,6 +87,7 @@
       template:
         src: main.tf
         dest: "{{ current_session_folder }}/terraform/main.tf"
+        trim_blocks: no
     - name: Create VMs
       terraform:
         project_path: "{{ current_session_folder }}/terraform/"

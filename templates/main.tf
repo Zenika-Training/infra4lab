@@ -36,34 +36,10 @@ resource "aws_security_group" "default_sg" {
   name        = "default-sg-{{ session_name }}"
   description = "Allow inbound traffic from any IP"
 
+  {% for port in base_open_ports | union(open_ports | default([])) %}
   ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = {{ cidr_blocks }}
-  }
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = {{ cidr_blocks }}
-  }
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = {{ cidr_blocks }}
-  }
-  ingress {
-    from_port   = 8000
-    to_port     = 8999
-    protocol    = "tcp"
-    cidr_blocks = {{ cidr_blocks }}
-  }
-  {% for port in open_ports | default([]) %}
-  ingress {
-    from_port   = {{ port }}
-    to_port     = {{ port }}
+    from_port   = {% if port is mapping %}{{ port.from }}{% else %}{{ port }}{% endif %}
+    to_port     = {% if port is mapping %}{{ port.to }}{% else %}{{ port }}{% endif %}
     protocol    = "tcp"
     cidr_blocks = {{ cidr_blocks }}
   }
