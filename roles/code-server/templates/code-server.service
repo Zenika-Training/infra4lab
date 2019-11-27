@@ -14,11 +14,11 @@ Environment = SERVICE_URL=https://marketplace.visualstudio.com/_apis/public/gall
 ExecStart = /usr/local/bin/code-server --port 8998 \
               --cert /home/centos/.code-server.crt --cert-key /home/centos/.code-server.key \
               --auth password \
-              --disable-telemetry
-Restart = on-failure
-#RestartSec = 10
-#StartLimitBurst = 3
-#StartLimitInterval = 600
+              --disable-telemetry --disable-updates
+Restart = always
+RestartSec = 5
+StartLimitBurst = 10
+StartLimitInterval = 60
 
 [Install]
 WantedBy = multi-user.target
