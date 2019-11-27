@@ -131,11 +131,13 @@
 
     - name: Execute roles on hosts
       include_role:
-        name: "{{ item.name }}"
+        name: "{{ role.name }}"
       vars:
-        role_vars: "{{ item.vars | default({}) }}"
-      when: group_names | union(['all']) | intersect(item.target)
+        role_vars: "{{ role.vars | default({}) }}"
+      when: group_names | union(['all']) | intersect(role.target)
       loop: "{{ roles }}"
+      loop_control:
+        loop_var: role
 
 - name: Send hosts info
   hosts: localhost

@@ -52,5 +52,23 @@
 </ul>
 <p>(If the display size is small, do a force refresh)</p>
 {% endif %}
+{% if 'code-server' in roles | map(attribute='name') %}
+<p>You can also use an browser-embedded <a href="https://code.visualstudio.com/">Visual Studio Code</a> by connecting (ignore the certificate warning) to:</p>
+<ul>
+{% set code_server_instances = (roles | selectattr('name', 'eq', 'code-server') | first).target %}
+{% if code_server_instances == 'all' %}
+{% set code_server_instances = aws_instances | map(attribute='name') %}
+{% endif %}
+{% for instance in code_server_instances %}
+  <li>
+    <a href="https://{{ hostvars[session_name + '-' + trainee.username + '-' + instance].public_dns_name }}:8998/?folder=/home/centos">https://{{ hostvars[session_name + '-' + trainee.username + '-' + instance].public_dns_name }}:8998/?folder=/home/centos</a>
+  </li>
+{% endfor %}
+</ul>
+<p>With credentials:</p>
+<ul>
+  <li>password: <code>{{ session_name }}</code></li>
+</ul>
+{% endif %}
 
 <p>Have a good training!</p>
