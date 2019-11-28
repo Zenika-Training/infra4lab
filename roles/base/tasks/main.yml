@@ -6,7 +6,7 @@
 
 - name: Install base tools
   yum:
-    name: "{{ base_tools }}"
+    name: "{{ base_tools | union(tools | default([])) }}"
 
 - name: Add /usr/local/bin in sudo PATH
   lineinfile:

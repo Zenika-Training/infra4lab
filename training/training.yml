@@ -30,3 +30,6 @@ roles:
       kubernetes_version: 1.16
       install_kubeadm: True
       install_minikube: True
+
+tools:
+  - git
