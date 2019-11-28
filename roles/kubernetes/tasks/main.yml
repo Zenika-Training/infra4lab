@@ -16,7 +16,7 @@
     - name: Install kubectl
       yum:
         name:
-         - "kubectl-{{ kubernetes_version }}*"
+          - "kubectl-{{ kubernetes_version }}*"
     - name: Generate kubectl completion file
       shell: |
         kubectl completion bash > /etc/bash_completion.d/kubectl
@@ -29,7 +29,7 @@
     - name: Install kubeadm
       yum:
         name:
-        - "kubeadm-{{ kubernetes_version }}*"
+          - "kubeadm-{{ kubernetes_version }}*"
     - name: Generate kubeadm completion file
       shell: |
         kubeadm completion bash > /etc/bash_completion.d/kubeadm
@@ -40,7 +40,7 @@
 - name: Install kubelet
   yum:
     name:
-     - "kubelet-{{ kubernetes_version }}*"
+      - "kubelet-{{ kubernetes_version }}*"
   when: install_kubelet
 
 - name: Install minikube

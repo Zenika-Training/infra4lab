@@ -3,8 +3,8 @@
 - name: Install Docker dependencies
   yum:
     name:
-     - device-mapper-persistent-data
-     - lvm2
+      - device-mapper-persistent-data
+      - lvm2
 
 - name: Setup Docker repo
   get_url:
