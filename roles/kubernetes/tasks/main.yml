@@ -11,7 +11,7 @@
     repo_gpgcheck: True
     gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 
-- name: Install kubelet
+- name: Install kubectl
   block:
     - name: Install kubectl
       yum:
@@ -23,6 +23,12 @@
       args:
         creates: /etc/bash_completion.d/kubectl
   when: install_kubectl
+
+- name: Install kubelet
+  yum:
+    name:
+      - "kubelet-{{ kubernetes_version }}*"
+  when: install_kubelet
 
 - name: Install kubeadm
   block:
@@ -36,12 +42,6 @@
       args:
         creates: /etc/bash_completion.d/kubeadm
   when: install_kubeadm
-
-- name: Install kubelet
-  yum:
-    name:
-      - "kubelet-{{ kubernetes_version }}*"
-  when: install_kubelet
 
 - name: Install minikube
   block:
