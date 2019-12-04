@@ -11,9 +11,9 @@
     repo_gpgcheck: True
     gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 
-- name: Install kubectl
+- name: "Install kubectl {{ kubernetes_version }}"
   block:
-    - name: Install kubectl
+    - name: "Install kubectl {{ kubernetes_version }}"
       yum:
         name:
           - "kubectl-{{ kubernetes_version }}*"
@@ -24,7 +24,7 @@
         creates: /etc/bash_completion.d/kubectl
   when: install_kubectl
 
-- name: Install kubelet
+- name: "Install kubelet {{ kubernetes_version }}"
   yum:
     name:
       - "kubelet-{{ kubernetes_version }}*"
@@ -32,7 +32,7 @@
 
 - name: Install kubeadm
   block:
-    - name: Install kubeadm
+    - name: "Install kubeadm {{ kubernetes_version }}"
       yum:
         name:
           - "kubeadm-{{ kubernetes_version }}*"
@@ -43,9 +43,9 @@
         creates: /etc/bash_completion.d/kubeadm
   when: install_kubeadm
 
-- name: Install minikube
+- name: "Install minikube {{ minikube_version }}"
   block:
-    - name: Download minikube
+    - name: "Download minikube {{ minikube_version }}"
       get_url:
         url: "https://storage.googleapis.com/minikube/releases/{{ minikube_version }}/minikube-linux-amd64"
         dest: /usr/local/bin/minikube

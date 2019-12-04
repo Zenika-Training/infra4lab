@@ -24,7 +24,7 @@
         code_server_version: "{{ code_server_latest.json.tag_name }}"
   when: not code_server_version
 
-- name: Extract code-server
+- name: "Extract code-server {{ code_server_version }}"
   unarchive:
     src: "https://github.com/cdr/code-server/releases/download/{{ code_server_version }}/code-server{{ code_server_version }}-linux-x86_64.tar.gz"
     remote_src: yes

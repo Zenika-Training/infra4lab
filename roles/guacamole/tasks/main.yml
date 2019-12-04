@@ -32,7 +32,7 @@
     state: started
     enabled: true
 
-- name: Install guacd
+- name: "Install guacd {{ guacamole_version }}"
   yum:
     name:
       - "guacd-{{ guacamole_version }}"
@@ -89,7 +89,7 @@
   notify:
     - Restart tomcat
 
-- name: Install guacamole-client webapp
+- name: "Install guacamole-client webapp {{ guacamole_version }}"
   get_url:
     url: "http://archive.apache.org/dist/guacamole/{{ guacamole_version }}/binary/guacamole-{{ guacamole_version }}.war"
     dest: /var/lib/tomcat/webapps/ROOT.war
