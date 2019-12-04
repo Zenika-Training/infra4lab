@@ -135,7 +135,7 @@
       vars:
         role_vars: "{{ role.vars | default({}) }}"
       when: group_names | union(['all']) | intersect(role.target)
-      loop: "{{ roles }}"
+      loop: "{{ roles | default([]) }}"
       loop_control:
         loop_var: role
 

@@ -32,7 +32,7 @@
   After downloading it next to your SSH private key file, you can connect to an instance with the command: <code>ssh -F ssh_config &lt;NAME&gt;</code>.
 </p>
 
-{% if 'guacamole' in roles | map(attribute='name') %}
+{% if 'guacamole' in roles | default([]) | map(attribute='name') %}
 <p>You can also use an browser-embedded desktop by connecting (ignore the certificate warning) to:</p>
 <ul>
 {% set guacamole_instances = (roles | selectattr('name', 'eq', 'guacamole') | first).target %}
@@ -52,7 +52,7 @@
 </ul>
 <p>(If the display size is small, do a force refresh)</p>
 {% endif %}
-{% if 'code-server' in roles | map(attribute='name') %}
+{% if 'code-server' in roles | default([]) | map(attribute='name') %}
 <p>You can also use an browser-embedded <a href="https://code.visualstudio.com/">Visual Studio Code</a> by connecting (ignore the certificate warning) to:</p>
 <ul>
 {% set code_server_instances = (roles | selectattr('name', 'eq', 'code-server') | first).target %}
