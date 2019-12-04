@@ -4,6 +4,8 @@ provider "aws" {
   allowed_account_ids = ["{{ aws_account_id }}"]
 }
 
+data "aws_caller_identity" "current" {}
+
 data "aws_ami" "centos" {
   most_recent = true
   owners = ["679593333241"] # CentOS
@@ -51,7 +53,8 @@ resource "aws_security_group" "default_sg" {
     cidr_blocks = {{ cidr_blocks }}
   }
   tags = {
-    Name = "Default {{ session_name }}"
+    Name   = "Default {{ session_name }}"
+    Caller = "${data.aws_caller_identity.current.arn}"
   }
 }
 
@@ -84,6 +87,7 @@ resource "aws_instance" "{{ user }}_{{ instance.name }}" {
 
   tags = {
     Name     = "{{ session_name }}-{{ user }}-{{ instance.name }}"
+    Caller   = "${data.aws_caller_identity.current.arn}"
     Hostname = "{{ instance.name }}"
     Training = "{{ training_name }}"
     Session  = "{{ session_name }}"
