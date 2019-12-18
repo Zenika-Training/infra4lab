@@ -4,6 +4,9 @@ RUN adduser -D ansible
 
 WORKDIR /work
 
+# PuTTY
+RUN apk add --no-cache putty
+
 # Ansible
 COPY requirements.txt .
 RUN apk add --no-cache openssh python3 py3-jinja2 py3-yaml py3-cryptography py3-urllib3 py3-docutils py3-dateutil rsync \
