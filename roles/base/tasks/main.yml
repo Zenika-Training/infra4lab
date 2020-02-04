@@ -13,3 +13,10 @@
     path: /etc/sudoers
     regexp: '^Defaults *secure_path'
     line: 'Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin'
+
+- name: Add LF at end of curl output
+  become: no
+  lineinfile:
+    path: ~/.curlrc
+    line: '--write-out "\n"'
+    create: yes
