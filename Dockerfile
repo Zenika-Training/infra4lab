@@ -16,7 +16,7 @@ ENV BOTO_USE_ENDPOINT_HEURISTICS=True
 
 # Terraform
 ENV TERRAFORM_VERSION=0.12.10
-RUN apk add --no-cache ca-certificates \
+RUN apk add --no-cache git ca-certificates \
  && wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
  && unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin/ \
  && rm -f terraform_${TERRAFORM_VERSION}_linux_amd64.zip
