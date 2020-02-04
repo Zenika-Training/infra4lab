@@ -37,7 +37,8 @@ data "aws_ami" "centos" {
 }
 
 module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "2.24.0"
 
   name = "vpc"
   cidr = "10.0.0.0/16"
