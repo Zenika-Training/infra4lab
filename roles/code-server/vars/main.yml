@@ -1,6 +1,7 @@
 ---
 
 code_server_version: "{{ role_vars.code_server_version | default(None) }}"
+code_server_tag_name: "{{ role_vars.code_server_tag_name | default(code_server_version) }}"
 
 code_server_base_extensions:
   - auchenberg.vscode-browser-preview

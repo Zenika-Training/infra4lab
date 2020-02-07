@@ -21,12 +21,13 @@
       register: code_server_latest
     - name: Compute latest version
       set_fact:
-        code_server_version: "{{ code_server_latest.json.tag_name }}"
+        code_server_version: "{{ code_server_latest.json.name }}"
+        code_server_tag_name: "{{ code_server_latest.json.tag_name }}"
   when: not code_server_version
 
 - name: "Extract code-server {{ code_server_version }}"
   unarchive:
-    src: "https://github.com/cdr/code-server/releases/download/{{ code_server_version }}/code-server{{ code_server_version }}-linux-x86_64.tar.gz"
+    src: "https://github.com/cdr/code-server/releases/download/{{ code_server_tag_name }}/code-server{{ code_server_version }}-linux-x86_64.tar.gz"
     remote_src: yes
     dest: /usr/local/bin
     exclude:
@@ -97,6 +98,7 @@
     code-server --install-extension {{ item }}
   environment:
     SERVICE_URL: https://marketplace.visualstudio.com/_apis/public/gallery
+    NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-bundle.crt
   become: no
   register: this
   changed_when: "'is already installed' not in this.stdout"
