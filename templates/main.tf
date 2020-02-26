@@ -12,7 +12,7 @@ data "aws_availability_zones" "availability_zones" {
 
 data "aws_ami" "centos" {
   most_recent = true
-  owners = ["679593333241"] # CentOS
+  owners = ["679593333241"] # Marketplace
   name_regex = "^CentOS Linux 7 .*"
 
   filter {
@@ -23,6 +23,11 @@ data "aws_ami" "centos" {
   filter {
     name   = "architecture"
     values = ["x86_64"]
+  }
+
+  filter {
+    name   = "product-code"
+    values = ["aw0evgkw8e5c1q413zgy5pjce"] # CentOS (https://wiki.centos.org/Cloud/AWS#Images)
   }
 
   filter {
