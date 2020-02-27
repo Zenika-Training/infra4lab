@@ -32,13 +32,21 @@
     state: started
     enabled: true
 
-- name: "Install guacd {{ guacamole_version }}"
+- name: Install guacd
   yum:
     name:
-      - "guacd-{{ guacamole_version }}"
-      - "libguac-client-rdp-{{ guacamole_version }}"
-    enablerepo: epel-testing
+      - guacd
+      - libguac-client-rdp
     state: present
+
+- name: Retrieve installed guacd version
+  yum:
+    list: guacd
+  register: guacd
+
+- name: Extract guacd version
+  set_fact:
+    guacamole_version: "{{ (guacd.results | selectattr('yumstate', 'equalto', 'installed') | first).version }}"
 
 - name: Install tomcat and dependencies
   yum:
@@ -89,11 +97,17 @@
   notify:
     - Restart tomcat
 
+- name: Retrieve guacamole-client webapp checksum
+  uri:
+    url: "http://archive.apache.org/dist/guacamole/{{ guacamole_version }}/binary/guacamole-{{ guacamole_version }}.war.sha256"
+    return_content: yes
+  register: guacamole_client_checksum
+
 - name: "Install guacamole-client webapp {{ guacamole_version }}"
   get_url:
     url: "http://archive.apache.org/dist/guacamole/{{ guacamole_version }}/binary/guacamole-{{ guacamole_version }}.war"
     dest: /var/lib/tomcat/webapps/ROOT.war
-    checksum: "{{ guacamole_client_checksum }}"
+    checksum: "sha256:{{ guacamole_client_checksum.content.split().0 }}"
     owner: tomcat
     group: tomcat
   notify:
