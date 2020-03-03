@@ -68,6 +68,7 @@
       when: session_extra_config is changed
     - include_vars:
         dir: "{{ current_session_vars_folder }}"
+        ignore_unknown_extensions: yes
 
 - name: Create VMs
   hosts: localhost
@@ -111,6 +112,7 @@
     - name: Reload group_vars
       include_vars:
         dir: "{{ current_session_vars_folder }}"
+        ignore_unknown_extensions: yes
       delegate_to: "{{ item }}"
       delegate_facts: true
       loop: "{{ groups.all }}"
