@@ -12,7 +12,7 @@ aws_instances:
     type: t2.micro
 
 roles:
-  - name: guacamole
+  - name: code-server
     target:
       - node0
   - name: workspaces
@@ -22,12 +22,12 @@ roles:
     target:
       - node0
     vars:
-      docker_version: 18.09
+      docker_version: 19.03
   - name: kubernetes
     target:
       - node0
     vars:
-      kubernetes_version: 1.16
+      kubernetes_version: 1.17
       install_kubeadm: True
       install_minikube: True
 

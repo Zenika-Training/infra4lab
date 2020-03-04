@@ -1,4 +1,4 @@
-FROM alpine:3.10
+FROM alpine:3.11
 
 RUN adduser -D ansible
 
@@ -15,7 +15,7 @@ RUN apk add --no-cache openssh python3 py3-jinja2 py3-yaml py3-cryptography py3-
 ENV BOTO_USE_ENDPOINT_HEURISTICS=True
 
 # Terraform
-ENV TERRAFORM_VERSION=0.12.10
+ENV TERRAFORM_VERSION=0.12.21
 RUN apk add --no-cache git ca-certificates \
  && wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
  && unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin/ \
