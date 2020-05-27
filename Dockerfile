@@ -25,4 +25,5 @@ COPY . .
 
 VOLUME /training
 USER ansible
-ENTRYPOINT ["ansible-playbook", "--inventory", "localhost", "--inventory", "/training/sessions/current/hosts.aws_ec2.yml", "infra.yml"]
+ENTRYPOINT ["ansible-playbook", "--inventory", "localhost"]
+CMD ["--inventory", "/training/sessions/current/hosts.aws_ec2.yml", "infra.yml"]

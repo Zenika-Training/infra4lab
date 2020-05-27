@@ -124,29 +124,7 @@
 
 
 - name: Setup VMs
-  hosts: all:!localhost
-  gather_facts: yes
-  become: yes
-  vars_files:
-    - "{{ training_vars_file }}"
-  tags:
-    - setup
-
-  tasks:
-
-    - name: Install base on hosts
-      include_role:
-        name: base
-
-    - name: Execute roles on hosts
-      include_role:
-        name: "{{ role.name }}"
-      vars:
-        role_vars: "{{ role.vars | default({}) }}"
-      when: group_names | union(['all']) | intersect(role.target)
-      loop: "{{ roles | default([]) }}"
-      loop_control:
-        loop_var: role
+  import_playbook: setup.yml
 
 - name: Send hosts info
   hosts: localhost

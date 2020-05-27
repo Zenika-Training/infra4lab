@@ -1,0 +1,23 @@
+---
+
+- name: Create cloud-init files
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - "{{ training_vars_file }}"
+  tags:
+    - cloud-init
+
+  tasks:
+
+    - name: Create strigo folder
+      file:
+        path: "{{ strigo_folder }}"
+        state: directory
+    - name: Generate cloud-init files
+      template:
+        src: cloud-init.sh
+        dest: "{{ strigo_folder }}/cloud-init-{{ instance }}.sh"
+      loop: "{{ aws_instances | map(attribute='name') | list }}"
+      loop_control:
+        loop_var: instance

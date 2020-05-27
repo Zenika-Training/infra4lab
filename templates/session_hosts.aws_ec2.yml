@@ -4,6 +4,8 @@ regions:
   - {{ aws_region }}
 filters:
   tag:Session: {{ session_name }}
+groups:
+  vms: True
 keyed_groups:
   - key: tags.Hostname
     separator: ''

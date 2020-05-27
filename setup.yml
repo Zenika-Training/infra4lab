@@ -1,0 +1,26 @@
+---
+
+- name: Setup VMs
+  hosts: vms
+  gather_facts: yes
+  become: yes
+  vars_files:
+    - "{{ training_vars_file }}"
+  tags:
+    - setup
+
+  tasks:
+
+    - name: Install base on hosts
+      include_role:
+        name: base
+
+    - name: Execute roles on hosts
+      include_role:
+        name: "{{ role.name }}"
+      vars:
+        role_vars: "{{ role.vars | default({}) }}"
+      when: group_names | union(['all']) | intersect(role.target)
+      loop: "{{ roles | default([]) | rejectattr('name', 'in', strigo_excluded_roles) | list }}"
+      loop_control:
+        loop_var: role

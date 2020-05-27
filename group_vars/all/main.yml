@@ -10,6 +10,13 @@ current_session_vars_folder: "{{ current_session_folder }}/group_vars/all"
 current_session_local_ip: "{{ lookup('pipe', 'wget -qO- ifconfig.me') }}"
 current_session_authorized_ips: "{{ authorized_ips | default([]) | union([current_session_local_ip]) | list | sort }}"
 
+strigo_folder: "{{ training_folder }}/strigo"
+base_strigo_excluded_roles:
+  - code-server
+  - guacamole
+  - workspaces
+strigo_excluded_roles: "{{ base_strigo_excluded_roles if strigo | default(False) else [] }}"
+
 aws_account_id: '682417792030'
 aws_region: eu-west-3
 aws_ses_region: eu-west-1
