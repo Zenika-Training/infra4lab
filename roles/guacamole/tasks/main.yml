@@ -8,6 +8,20 @@
     gpgcheck: true
     gpgkey: https://dl.google.com/linux/linux_signing_key.pub
     enabled: true
+  when: ansible_facts.distribution == 'CentOS'
+
+- block:
+
+    - name: Add Google repo key
+      apt_key:
+        url: https://dl.google.com/linux/linux_signing_key.pub
+
+    - name: Add Google Chrome repo
+      apt_repository:
+        repo: deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
+        filename: google-chrome
+
+  when: ansible_facts.distribution == 'Ubuntu'
 
 - name: Setup vscode repo
   yum_repository:
@@ -16,15 +30,29 @@
     baseurl: https://packages.microsoft.com/yumrepos/vscode
     gpgcheck: true
     gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+  when: ansible_facts.distribution == 'CentOS'
+
+- block:
+
+    - name: Add vscode repo key
+      apt_key:
+        url: https://packages.microsoft.com/keys/microsoft.asc
+
+    - name: Add vscode repo
+      apt_repository:
+        repo: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
+        filename: vscode
+
+  when: ansible_facts.distribution == 'Ubuntu'
 
 - name: Install UI tools
-  yum:
+  package:
     name:
       - firefox
       - xrdp
       - google-chrome-stable
       - code
-      - "@Xfce"
+      - "{{ distribution_xfce[ansible_facts.distribution] }}"
 
 - name: Ensure xrdp daemon is started and enabled
   service:
@@ -32,33 +60,87 @@
     state: started
     enabled: true
 
-- name: Install guacd
-  yum:
-    name:
-      - guacd
-      - libguac-client-rdp
-    state: present
+- block:
 
-- name: Retrieve installed guacd version
-  yum:
-    list: guacd
-  register: guacd
+    - name: Extract guacamole version
+      set_fact:
+        guacamole_version: 1.1.0
 
-- name: Extract guacd version
-  set_fact:
-    guacamole_version: "{{ (guacd.results | selectattr('yumstate', 'equalto', 'installed') | first).version }}"
+    - name: Extract guacamole source code
+      unarchive:
+        src: "https://downloads.apache.org/guacamole/{{ guacamole_version }}/source/guacamole-server-{{ guacamole_version }}.tar.gz"
+        remote_src: yes
+        dest: /opt
+        extra_opts:
+          - --transform
+          - "s/-{{ guacamole_version }}//"
+        creates: /opt/guacamole-server
+
+    - name: Install guacamole build dependencies
+      package:
+        name:
+          - make
+          - g++
+          - libcairo2-dev
+          - libjpeg-turbo8-dev
+          - libpng-dev
+          - libossp-uuid-dev
+          - freerdp2-dev
+
+    - name: Configure guacamole build
+      command: |
+        ./configure --with-init-dir=/etc/init.d
+      args:
+        chdir: /opt/guacamole-server
+        creates: /opt/guacamole-server/Makefile
+
+    - name: Build guacamole
+      command: |
+        make
+      args:
+        chdir: /opt/guacamole-server
+        creates: /opt/guacamole-server/src/guacd/guacd
+
+    - name: Install guacamole
+      command: |
+        make install
+      args:
+        chdir: /opt/guacamole-server
+        creates: /usr/local/sbin/guacd
+
+    - name: Link guacamole libraries
+      command: |
+        ldconfig
+      changed_when: False
+
+  when: ansible_facts.distribution == 'Ubuntu'
+
+- block:
+
+    - name: Install guacamole
+      package:
+        name:
+          - guacd
+          - libguac-client-rdp
+        state: present
+
+    - name: Retrieve installed guacamole version
+      package_facts:
+
+    - name: Extract guacamole version
+      set_fact:
+        guacamole_version: "{{ (ansible_facts.packages.guacd | first).version }}"
+
+  when: ansible_facts.distribution == 'CentOS'
 
 - name: Install tomcat and dependencies
-  yum:
-    name:
-      - tomcat
-      - tomcat-native
-      - python2-cryptography
+  package:
+    name: "{{ distribution_tomcat_packages[ansible_facts.distribution] }}"
     state: present
 
 - name: Generate tomcat key
   openssl_privatekey:
-    path: /etc/tomcat/tomcat.key
+    path: "/etc/{{ distribution_tomcat[ansible_facts.distribution] }}/tomcat.key"
     owner: tomcat
     group: tomcat
     mode: 0400
@@ -67,8 +149,8 @@
 
 - name: Generate tomcat CSR
   openssl_csr:
-    path: /etc/tomcat/tomcat.csr
-    privatekey_path: /etc/tomcat/tomcat.key
+    path: "/etc/{{ distribution_tomcat[ansible_facts.distribution] }}/tomcat.csr"
+    privatekey_path: "/etc/{{ distribution_tomcat[ansible_facts.distribution] }}/tomcat.key"
     common_name: "{{ public_dns_name }}"
     subject_alt_name:
       - "DNS:{{ public_dns_name }}"
@@ -78,9 +160,9 @@
 
 - name: Generate tomcat certificate
   openssl_certificate:
-    path: /etc/tomcat/tomcat.crt
-    csr_path: /etc/tomcat/tomcat.csr
-    privatekey_path: /etc/tomcat/tomcat.key
+    path: "/etc/{{ distribution_tomcat[ansible_facts.distribution] }}/tomcat.crt"
+    csr_path: "/etc/{{ distribution_tomcat[ansible_facts.distribution] }}/tomcat.csr"
+    privatekey_path: "/etc/{{ distribution_tomcat[ansible_facts.distribution] }}/tomcat.key"
     selfsigned_not_after: +5d
     provider: selfsigned
     owner: tomcat
@@ -91,11 +173,20 @@
 - name: Setup tomcat
   copy:
     src: tomcat-server.xml
-    dest: /etc/tomcat/server.xml
+    dest: "/etc/{{ distribution_tomcat[ansible_facts.distribution] }}/server.xml"
     owner: tomcat
     group: tomcat
   notify:
     - Restart tomcat
+
+- name: Set permissions
+  file:
+    path: "/var/lib/{{ distribution_tomcat[ansible_facts.distribution] }}/webapps/ROOT"
+    owner: tomcat
+    group: tomcat
+    recurse: true
+    state: directory
+  when: ansible_facts.distribution == 'Ubuntu'
 
 - name: Retrieve guacamole-client webapp checksum
   uri:
@@ -106,7 +197,7 @@
 - name: "Install guacamole-client webapp {{ guacamole_version }}"
   get_url:
     url: "http://archive.apache.org/dist/guacamole/{{ guacamole_version }}/binary/guacamole-{{ guacamole_version }}.war"
-    dest: /var/lib/tomcat/webapps/ROOT.war
+    dest: "/var/lib/{{ distribution_tomcat[ansible_facts.distribution] }}/webapps/ROOT.war"
     checksum: "sha256:{{ guacamole_client_checksum.content.split().0 }}"
     owner: tomcat
     group: tomcat
@@ -130,24 +221,25 @@
     - Restart tomcat
     - Restart guacd
 
-- name: Setup Xclients
+- name: Setup X session
   lineinfile:
-    path: /home/centos/.Xclients
+    path: "/home/{{ current_os.user }}/{{ distribution_session[ansible_facts.distribution] }}"
     create: true
     line: xfce4-session
     state: present
-    owner: centos
-    group: centos
+    owner: "{{ current_os.user }}"
+    group: "{{ current_os.user }}"
     mode: 0775
 
 - name: Setup default panel
   lineinfile:
-    path: /home/centos/.bash_profile
+    path: "/home/{{ current_os.user }}/.bash_profile"
+    create: true
     line: export XFCE_PANEL_MIGRATE_DEFAULT=1
 
 - name: Setup remote user password for RDP access
   user:
-    name: centos
+    name: "{{ current_os.user }}"
     password: "{{ aws_password | password_hash() }}"
   changed_when: false
 
@@ -156,7 +248,7 @@
 
 - name: Launch and enable tomcat service
   service:
-    name: tomcat
+    name: "{{ distribution_tomcat[ansible_facts.distribution] }}"
     state: started
     enabled: true
 

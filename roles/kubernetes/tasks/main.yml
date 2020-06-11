@@ -9,13 +9,27 @@
     gpgcheck: True
     repo_gpgcheck: True
     gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+  when: ansible_facts.distribution == 'CentOS'
+
+- block:
+
+    - name: Add Kubernetes repo key
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+
+    - name: Add Kubernetes repo
+      apt_repository:
+        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        filename: kubernetes
+
+  when: ansible_facts.distribution == 'Ubuntu'
 
 - name: "Install kubectl {{ kubernetes_version }}"
   block:
     - name: "Install kubectl {{ kubernetes_version }}"
-      yum:
+      package:
         name:
-          - "kubectl-{{ kubernetes_version }}*"
+          - "kubectl{{ current_os.version_sep }}{{ kubernetes_version }}*"
     - name: Generate kubectl completion file
       shell: |
         kubectl completion bash > /etc/bash_completion.d/kubectl
@@ -24,17 +38,17 @@
   when: install_kubectl
 
 - name: "Install kubelet {{ kubernetes_version }}"
-  yum:
+  package:
     name:
-      - "kubelet-{{ kubernetes_version }}*"
+      - "kubelet{{ current_os.version_sep }}{{ kubernetes_version }}*"
   when: install_kubelet
 
 - name: Install kubeadm
   block:
     - name: "Install kubeadm {{ kubernetes_version }}"
-      yum:
+      package:
         name:
-          - "kubeadm-{{ kubernetes_version }}*"
+          - "kubeadm{{ current_os.version_sep }}{{ kubernetes_version }}*"
     - name: Generate kubeadm completion file
       shell: |
         kubeadm completion bash > /etc/bash_completion.d/kubeadm
@@ -46,8 +60,7 @@
   block:
     - name: Install minikube dependencies
       yum:
-        name:
-          - conntrack-tools
+        name: "{{ distribution_minikube_dependencies[ansible_facts.distribution] }}"
     - name: "Download minikube {{ minikube_version }}"
       get_url:
         url: "https://storage.googleapis.com/minikube/releases/{{ minikube_version }}/minikube-linux-amd64"

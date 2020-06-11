@@ -8,9 +8,23 @@
     gpgcheck: true
     gpgkey: https://dl.google.com/linux/linux_signing_key.pub
     enabled: true
+  when: ansible_facts.distribution == 'CentOS'
+
+- block:
+
+    - name: Add Google repo key
+      apt_key:
+        url: https://dl.google.com/linux/linux_signing_key.pub
+
+    - name: Add Google Chrome repo
+      apt_repository:
+        repo: deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
+        filename: google-chrome
+
+  when: ansible_facts.distribution == 'Ubuntu'
 
 - name: Install Chrome
-  yum:
+  package:
     name: google-chrome-stable
 
 - name: Compute latest version
@@ -52,13 +66,13 @@
     state: link
 
 - name: Install openssl dependency
-  yum:
-    name: python2-cryptography
+  package:
+    name: "{{ distribution_python_cryptography[ansible_facts.distribution] }}"
     state: present
 
 - name: Generate code-server key
   openssl_privatekey:
-    path: ~centos/.code-server.key
+    path: "~{{ current_os.user }}/.code-server.key"
     mode: 0400
   become: no
   notify:
@@ -66,8 +80,8 @@
 
 - name: Generate code-server CSR
   openssl_csr:
-    path: ~centos/.code-server.csr
-    privatekey_path: ~centos/.code-server.key
+    path: "~{{ current_os.user }}/.code-server.csr"
+    privatekey_path: "~{{ current_os.user }}/.code-server.key"
     common_name: "{{ public_dns_name }}"
     subject_alt_name:
       - "DNS:{{ public_dns_name }}"
@@ -76,9 +90,9 @@
 
 - name: Generate code-server certificate
   openssl_certificate:
-    path: ~centos/.code-server.crt
-    csr_path: ~centos/.code-server.csr
-    privatekey_path: ~centos/.code-server.key
+    path: "~{{ current_os.user }}/.code-server.crt"
+    csr_path: "~{{ current_os.user }}/.code-server.csr"
+    privatekey_path: "~{{ current_os.user }}/.code-server.key"
     selfsigned_not_after: +5d
     provider: selfsigned
   become: no

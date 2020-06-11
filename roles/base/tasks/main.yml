@@ -1,11 +1,54 @@
 ---
 
 - name: Install EPEL repos
-  yum:
+  package:
     name: epel-release
+  when: ansible_facts.distribution == 'CentOS'
+
+
+- block:
+
+    - name: Update apt
+      apt:
+        update_cache: yes
+      changed_when: False
+
+    - name: Disable unattended-upgrades
+      service:
+        name: unattended-upgrades
+        state: stopped
+        enabled: False
+
+    - name: Retrieve snapd.socket state
+      command: |
+        systemctl is-active snapd.socket
+      register: snapd_socket_state
+      changed_when: False
+      failed_when: False
+
+    - name: Remove useless snaps
+      snap:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - amazon-ssm-agent
+        - lxd
+        - core18
+      when: snapd_socket_state.rc == 0
+
+    - name: Disable snap
+      service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: False
+      loop:
+        - snapd.socket
+        - snapd.service
+
+  when: ansible_facts.distribution == 'Ubuntu'
 
 - name: Install base tools
-  yum:
+  package:
     name: "{{ base_tools | union(tools | default([])) }}"
 
 - name: Add /usr/local/bin in sudo PATH

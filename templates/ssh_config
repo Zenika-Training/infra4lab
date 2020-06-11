@@ -4,6 +4,6 @@ Host {{ hostvars[host].hostname }}
 {% endfor %}
 
 Host *
-  User centos
+  User {{ current_os.user }}
   IdentityFile {{ item.1 }}.pem
   StrictHostKeyChecking no
