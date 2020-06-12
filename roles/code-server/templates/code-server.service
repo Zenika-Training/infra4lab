@@ -12,10 +12,11 @@ Type = simple
 Environment = PASSWORD={{ session_name }}
 Environment = SERVICE_URL=https://marketplace.visualstudio.com/_apis/public/gallery
 Environment = NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-bundle.crt
-ExecStart = /usr/local/bin/code-server --port 8998 \
+ExecStart = /usr/local/bin/code-server \
+              --bind-addr 0.0.0.0:8998 \
               --cert /home/centos/.code-server.crt --cert-key /home/centos/.code-server.key \
               --auth password \
-              --disable-telemetry --disable-updates
+              --disable-telemetry
 Restart = always
 RestartSec = 5
 StartLimitBurst = 10

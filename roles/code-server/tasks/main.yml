@@ -15,29 +15,41 @@
 
 - name: Compute latest version
   block:
-    - name: Get latest release
+    - name: Get releases
       uri:
-        url: https://api.github.com/repos/cdr/code-server/releases/latest
-      register: code_server_latest
-    - name: Compute latest version
+        url: https://api.github.com/repos/cdr/code-server/releases
+      register: code_server_releases
+    - name: Compute latest usable version
       set_fact:
-        code_server_version: "{{ code_server_latest.json.name }}"
-        code_server_tag_name: "{{ code_server_latest.json.tag_name }}"
+        code_server_version: "{{ (code_server_releases.json | to_json | from_json | json_query(query)).name }}"
+      vars:
+        query: "[?starts_with(name, 'v')] | [0]"
   when: not code_server_version
+
+- name: Clean version
+  set_fact:
+    code_server_version: "{{ code_server_version | regex_replace('^v', '') }}"
+
+- name: Check minimal version
+  assert:
+    that: code_server_version is version('3.2', '>=')
+    msg: code-server version must be >= 3.2.0
 
 - name: "Extract code-server {{ code_server_version }}"
   unarchive:
-    src: "https://github.com/cdr/code-server/releases/download/{{ code_server_tag_name }}/code-server{{ code_server_version }}-linux-x86_64.tar.gz"
+    src: "https://github.com/cdr/code-server/releases/download/v{{ code_server_version }}/code-server-{{ code_server_version }}-linux-amd64.tar.gz"
     remote_src: yes
-    dest: /usr/local/bin
-    exclude:
-      - README.md
-      - LICENSE.txt
-      - ThirdPartyNotices.txt
+    dest: /usr/local/lib
     extra_opts:
-      - --strip-components
-      - '1'
-    creates: /usr/local/bin/code-server
+      - --transform
+      - "s/-{{ code_server_version }}-linux-amd64//"
+    creates: /usr/local/lib/code-server/code-server
+
+- name: Link code-server binary
+  file:
+    src: /usr/local/lib/code-server/code-server
+    dest: /usr/local/bin/code-server
+    state: link
 
 - name: Install openssl dependency
   yum:
