@@ -1,6 +1,6 @@
 #!/bin/bash
 
-{% if os == 'ubuntu' %}
+{% if os | default() in ['ubuntu', 'ubuntu_desktop'] %}
 apt-get install --assume-yes ansible git
 {% else %}{# Default to centos #}
 yum install --assumeyes epel-release

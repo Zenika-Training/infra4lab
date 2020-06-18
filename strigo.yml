@@ -21,3 +21,91 @@
       loop: "{{ aws_instances | map(attribute='name') | list }}"
       loop_control:
         loop_var: instance
+
+- name: Update class resources on Strigo
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - "{{ training_vars_file }}"
+  vars:
+    strigo_token: "{{ lookup('env', 'STRIGO_ORG_ID') }}:{{ lookup('env', 'STRIGO_API_KEY') }}"
+  tags:
+    - strigo
+
+  tasks:
+    - name: Get class current resources
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/resources"
+        return_content: yes
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+      register: current_resources
+
+    - name: Create missing class resources
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/resources"
+        method: POST
+        return_content: yes
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+        body_format: json
+        body:
+          name: "{{ instance.name }}"
+          ec2_region: "eu-central-1"
+          image_id: "{{ strigo_image_id }}"
+          image_user: "{{ current_os.user }}"
+          #instance_type: "{{ instance.type }}"
+          #webview_links:
+          userdata: |
+            {{ lookup('file', strigo_folder + '/cloud-init-' + instance.name + '.sh') }}
+      loop: "{{ aws_instances | rejectattr('name', 'in', current_resources.json.data | map(attribute='name')) | list }}"
+      register: create_resource
+      failed_when: "create_resource.json.result != 'success'"
+      loop_control:
+        loop_var: instance
+        label: "{{ instance.name }}"
+
+    - name: Update class resources
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/resources/{{ resource.id }}"
+        method: PATCH
+        return_content: yes
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+        body_format: json
+        body:
+          name: "{{ resource.name }}"
+          image_id: "{{ strigo_image_id }}"
+          image_user: "{{ current_os.user }}"
+          #instance_type: "{{ (aws_instances | selectattr('name', 'equalto', resource.name) | first).type }}"
+          #webview_links:
+          userdata: |
+            {{ lookup('file', strigo_folder + '/cloud-init-' + resource.name + '.sh') }}
+      loop: "{{ current_resources.json.data | selectattr('name', 'in', aws_instances | map(attribute='name')) | list }}"
+      register: update_resource
+      failed_when: "update_resource.json.result != 'success'"
+      loop_control:
+        loop_var: resource
+        label: "{{ resource.name }}"
+
+    - name: Delete extra class resources
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/resources/{{ resource.id }}"
+        method: DELETE
+        return_content: yes
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+        status_code:
+          - 204
+      loop: "{{ current_resources.json.data | rejectattr('name', 'in', aws_instances | map(attribute='name')) | list }}"
+      loop_control:
+        loop_var: resource
+        label: "{{ resource.name }}"

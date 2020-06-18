@@ -1,6 +1,7 @@
 ---
 
 training_name: test
+strigo_class_id: Cmy4bD3y5rSqgbhKz
 
 #aws_region: eu-west-3
 aws_instances:
