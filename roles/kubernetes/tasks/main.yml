@@ -1,6 +1,5 @@
 ---
 
-
 - name: Setup Kubernetes repo
   yum_repository:
     name: kubernetes
@@ -45,6 +44,10 @@
 
 - name: "Install minikube {{ minikube_version }}"
   block:
+    - name: Install minikube dependencies
+      yum:
+        name:
+          - conntrack-tools
     - name: "Download minikube {{ minikube_version }}"
       get_url:
         url: "https://storage.googleapis.com/minikube/releases/{{ minikube_version }}/minikube-linux-amd64"
@@ -55,9 +58,15 @@
         minikube completion bash > /etc/bash_completion.d/minikube
       args:
         creates: /etc/bash_completion.d/minikube
-    - name: Setup vm-driver none env vars
+    - name: Setup minikube driver none env vars
       copy:
         src: minikube.sh
         dest: /etc/profile.d/minikube.sh
         mode: 0644
   when: install_minikube
+
+- name: Setup sysctl for Kubernetes
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: '1'
+    sysctl_file: /etc/sysctl.d/bridge-nf-call-iptables.conf
