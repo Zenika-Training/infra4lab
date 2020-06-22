@@ -85,7 +85,7 @@
 
 - name: Install openssl dependency
   package:
-    name: "{{ distribution_python_cryptography[ansible_facts.distribution] }}"
+    name: python3-cryptography
     state: present
 
 - name: Generate code-server key

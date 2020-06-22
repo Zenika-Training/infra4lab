@@ -13,10 +13,10 @@ aws_instances:
 #os: ubuntu
 
 roles:
-  - name: guacamole
-    target:
-      - node0
-  - name: code-server
+#  - name: guacamole  # guacd not available in epel8
+#    target:
+#      - node0
+  - name: code-server  # core-dump when launched with systemd
     target:
       - node0
   - name: workspaces

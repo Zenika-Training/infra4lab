@@ -1,9 +1,5 @@
 ---
 
-distribution_python_cryptography:
-  CentOS: python2-cryptography
-  Ubuntu: python3-cryptography
-
 code_server_version: "{{ role_vars.code_server_version | default(None) }}"
 code_server_tag_name: "{{ role_vars.code_server_tag_name | default(code_server_version) }}"
 

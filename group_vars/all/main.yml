@@ -17,12 +17,11 @@ aws_password: zenika
 
 available_oses:
   centos:
-    aws_ami_owner: '679593333241' # Marketplace
-    aws_ami_name_regex: '^CentOS Linux 7 .*'
+    aws_ami_owner: '125523088429'
+    aws_ami_name_regex: '^CentOS 8.*'
     aws_ami_filters:
-      name: 'CentOS Linux 7 *'
+      name: 'CentOS 8*'
       architecture: x86_64
-      product-code: aw0evgkw8e5c1q413zgy5pjce # CentOS (https://wiki.centos.org/Cloud/AWS#Images)
       virtualization-type: hvm
       root-device-type: ebs
     user: centos
