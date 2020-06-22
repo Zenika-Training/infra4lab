@@ -43,7 +43,7 @@ data "aws_ami" "centos" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "2.24.0"
+  version = "2.44.0"
 
   name = "vpc"
   cidr = "10.0.0.0/16"
@@ -66,7 +66,7 @@ module "vpc" {
 resource "aws_security_group" "default_sg" {
   name        = "{{ session_name }}"
   description = "Allow inbound traffic"
-  vpc_id      = "${module.vpc.vpc_id}"
+  vpc_id      = module.vpc.vpc_id
 
   {% for port in base_open_ports | union(open_ports | default([])) %}
   ingress {
@@ -96,7 +96,7 @@ resource "tls_private_key" "{{ user }}_generated_keypair" {
 
 resource "local_file" "{{ user }}_private_key" {
   filename = "${path.module}/../users/{{ user }}/{{ user }}.pem"
-  content  = "${tls_private_key.{{ user }}_generated_keypair.private_key_pem}"
+  content  = tls_private_key.{{ user }}_generated_keypair.private_key_pem
 
   provisioner "local-exec" {
     command = "chmod 400 ${path.module}/../users/{{ user }}/{{ user }}.pem"
@@ -105,16 +105,16 @@ resource "local_file" "{{ user }}_private_key" {
 
 resource "aws_key_pair" "{{ user }}_aws_keypair" {
   key_name   = "{{ user }}-{{ session_name }}"
-  public_key = "${tls_private_key.{{ user }}_generated_keypair.public_key_openssh}"
+  public_key = tls_private_key.{{ user }}_generated_keypair.public_key_openssh
 }
 
 {% for instance in aws_instances %}
 resource "aws_instance" "{{ user }}_{{ instance.name }}" {
-  key_name               = "${aws_key_pair.{{ user }}_aws_keypair.key_name}"
-  ami                    = "${data.aws_ami.centos.id}"
+  key_name               = aws_key_pair.{{ user }}_aws_keypair.key_name
+  ami                    = data.aws_ami.centos.id
   instance_type          = "{{ instance.type }}"
   vpc_security_group_ids = ["${aws_security_group.default_sg.id}", "${module.vpc.default_security_group_id}"]
-  subnet_id              = "${module.vpc.public_subnets[{{ loop.index0 }} % length(module.vpc.public_subnets)]}"
+  subnet_id              = module.vpc.public_subnets[{{ loop.index0 }} % length(module.vpc.public_subnets)]
 
   tags = {
     Name     = "{{ session_name }}-{{ user }}-{{ instance.name }}"
@@ -131,8 +131,8 @@ resource "aws_instance" "{{ user }}_{{ instance.name }}" {
 
     connection {
       user        = "centos"
-      private_key = "${tls_private_key.{{ user }}_generated_keypair.private_key_pem}"
-      host        = "${self.public_ip}"
+      private_key = tls_private_key.{{ user }}_generated_keypair.private_key_pem
+      host        = self.public_ip
     }
   }
 
@@ -144,8 +144,8 @@ resource "aws_instance" "{{ user }}_{{ instance.name }}" {
 
     connection {
       user        = "centos"
-      private_key = "${tls_private_key.{{ user }}_generated_keypair.private_key_pem}"
-      host        = "${self.public_ip}"
+      private_key = tls_private_key.{{ user }}_generated_keypair.private_key_pem
+      host        = self.public_ip
     }
   }
 }
