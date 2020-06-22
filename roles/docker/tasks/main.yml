@@ -1,21 +1,38 @@
 ---
 
-- name: Install Docker dependencies
-  yum:
-    name:
-      - device-mapper-persistent-data
-      - lvm2
+- block:
 
-- name: Setup Docker repo
-  get_url:
-    url: https://download.docker.com/linux/centos/docker-ce.repo
-    dest: /etc/yum.repos.d/docker-ce.repo
+    - name: Install Docker dependencies
+      package:
+        name:
+          - device-mapper-persistent-data
+          - lvm2
+
+    - name: Setup Docker repo
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+
+  when: ansible_facts.distribution == 'CentOS'
+
+- block:
+
+    - name: Add Docker repo key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+
+    - name: Add Docker repo
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_facts.distribution_release }} stable"
+        filename: docker
+
+  when: ansible_facts.distribution == 'Ubuntu'
 
 - name: "Install Docker {{ docker_version }}"
-  yum:
+  package:
     name:
-      - "docker-ce-{{ docker_version }}*"
-      - "docker-ce-cli-{{ docker_version }}*"
+      - "docker-ce{{ current_os.version_sep }}{{ docker_version }}*"
+      - "docker-ce-cli{{ current_os.version_sep }}{{ docker_version }}*"
       - containerd.io
 
 - name: Ensure docker daemon is started and enabled
@@ -24,8 +41,8 @@
     state: started
     enabled: true
 
-- name: Add centos user to docker group
+- name: Add os user to docker group
   user:
-    name: centos
+    name: "{{ current_os.user }}"
     groups:
       - docker

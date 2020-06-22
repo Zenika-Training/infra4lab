@@ -1,0 +1,22 @@
+---
+
+distribution_xfce:
+  CentOS: "@Xfce"
+  Ubuntu: xfce4
+
+distribution_tomcat:
+  CentOS: tomcat
+  Ubuntu: tomcat9
+
+distribution_tomcat_packages:
+  CentOS:
+    - tomcat
+    - tomcat-native
+    - python2-cryptography
+  Ubuntu:
+    - tomcat9
+    - python3-cryptography
+
+distribution_session:
+  CentOS: .Xclients
+  Ubuntu: .xsession

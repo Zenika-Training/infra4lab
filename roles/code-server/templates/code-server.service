@@ -7,14 +7,14 @@ Wants = network-online.target
 
 [Service]
 SyslogIdentifier = code-server
-User = centos
+User = {{ current_os.user }}
 Type = simple
 Environment = PASSWORD={{ session_name }}
 Environment = SERVICE_URL=https://marketplace.visualstudio.com/_apis/public/gallery
 Environment = NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-bundle.crt
 ExecStart = /usr/local/bin/code-server \
               --bind-addr 0.0.0.0:8998 \
-              --cert /home/centos/.code-server.crt --cert-key /home/centos/.code-server.key \
+              --cert /home/{{ current_os.user }}/.code-server.crt --cert-key /home/{{ current_os.user }}/.code-server.key \
               --auth password \
               --disable-telemetry
 Restart = always

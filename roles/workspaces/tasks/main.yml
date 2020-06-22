@@ -4,4 +4,4 @@
   become: no
   synchronize:
     src: "{{ workspaces_folder }}"
-    dest: "~centos/"
+    dest: "~{{ current_os.user }}/"

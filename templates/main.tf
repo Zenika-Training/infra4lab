@@ -10,35 +10,17 @@ data "aws_availability_zones" "availability_zones" {
   state = "available"
 }
 
-data "aws_ami" "centos" {
+data "aws_ami" "ami" {
   most_recent = true
-  owners = ["679593333241"] # Marketplace
-  name_regex = "^CentOS Linux 7 .*"
+  owners = ["{{ current_os.aws_ami_owner }}"]
+  name_regex = "{{ current_os.aws_ami_name_regex }}"
 
+  {% for name, value in (current_os.aws_ami_filters | default({})).items() %}
   filter {
-    name   = "name"
-    values = ["CentOS Linux 7 *"]
+    name   = "{{ name }}"
+    values = ["{{ value }}"]
   }
-
-  filter {
-    name   = "architecture"
-    values = ["x86_64"]
-  }
-
-  filter {
-    name   = "product-code"
-    values = ["aw0evgkw8e5c1q413zgy5pjce"] # CentOS (https://wiki.centos.org/Cloud/AWS#Images)
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-
-  filter {
-    name   = "root-device-type"
-    values = ["ebs"]
-  }
+  {% endfor %}
 }
 
 module "vpc" {
@@ -111,7 +93,7 @@ resource "aws_key_pair" "{{ user }}_aws_keypair" {
 {% for instance in aws_instances %}
 resource "aws_instance" "{{ user }}_{{ instance.name }}" {
   key_name               = aws_key_pair.{{ user }}_aws_keypair.key_name
-  ami                    = data.aws_ami.centos.id
+  ami                    = data.aws_ami.ami.id
   instance_type          = "{{ instance.type }}"
   vpc_security_group_ids = ["${aws_security_group.default_sg.id}", "${module.vpc.default_security_group_id}"]
   subnet_id              = module.vpc.public_subnets[{{ loop.index0 }} % length(module.vpc.public_subnets)]
@@ -127,10 +109,10 @@ resource "aws_instance" "{{ user }}_{{ instance.name }}" {
 
   provisioner "file" {
     source      = "../users/{{ user }}/{{ user }}.pem"
-    destination = "/home/centos/.ssh/id_rsa"
+    destination = "/home/{{ current_os.user }}/.ssh/id_rsa"
 
     connection {
-      user        = "centos"
+      user        = "{{ current_os.user }}"
       private_key = tls_private_key.{{ user }}_generated_keypair.private_key_pem
       host        = self.public_ip
     }
@@ -138,12 +120,12 @@ resource "aws_instance" "{{ user }}_{{ instance.name }}" {
 
   provisioner "remote-exec" {
     inline = [
-      "chmod 400 /home/centos/.ssh/id_rsa",
+      "chmod 400 /home/{{ current_os.user }}/.ssh/id_rsa",
       "sudo hostnamectl set-hostname --static {{ instance.name }}.{{ session_name }}.local",
     ]
 
     connection {
-      user        = "centos"
+      user        = "{{ current_os.user }}"
       private_key = tls_private_key.{{ user }}_generated_keypair.private_key_pem
       host        = self.public_ip
     }

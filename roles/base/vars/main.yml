@@ -1,8 +1,15 @@
 ---
 
-base_tools:
+common_base_tools:
   - vim
   - unzip
-  - nc
   - bash-completion
   - jq
+
+distribution_base_tools:
+  CentOS:
+    - nc
+  Ubuntu:
+    - netcat
+
+base_tools: "{{ common_base_tools | union(distribution_base_tools[ansible_facts.distribution] | default([])) }}"

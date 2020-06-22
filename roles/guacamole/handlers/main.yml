@@ -2,7 +2,7 @@
 
 - name: Restart tomcat service
   service:
-    name: tomcat
+    name: "{{ distribution_tomcat[ansible_facts.distribution] }}"
     state: restarted
   listen:
     - Restart tomcat

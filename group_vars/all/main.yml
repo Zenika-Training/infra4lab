@@ -15,6 +15,30 @@ aws_region: eu-west-3
 aws_ses_region: eu-west-1
 aws_password: zenika
 
+available_oses:
+  centos:
+    aws_ami_owner: '679593333241' # Marketplace
+    aws_ami_name_regex: '^CentOS Linux 7 .*'
+    aws_ami_filters:
+      name: 'CentOS Linux 7 *'
+      architecture: x86_64
+      product-code: aw0evgkw8e5c1q413zgy5pjce # CentOS (https://wiki.centos.org/Cloud/AWS#Images)
+      virtualization-type: hvm
+      root-device-type: ebs
+    user: centos
+    version_sep: '-'
+  ubuntu:
+    aws_ami_owner: '099720109477'
+    aws_ami_name_regex: '^ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*'
+    aws_ami_filters:
+      name: 'ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*'
+      architecture: x86_64
+      virtualization-type: hvm
+      root-device-type: ebs
+    user: ubuntu
+    version_sep: '='
+current_os: "{{ available_oses[os | default('centos')] }}"
+
 users: "{{ ['trainer'] | union(trainees | default({}) | map(attribute='username') | list ) }}"
 
 base_open_ports:

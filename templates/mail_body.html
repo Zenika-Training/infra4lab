@@ -23,7 +23,7 @@
   <br/>
   Please download it and change its permissions to <code>0400</code>.
   <br/>
-  You can then connect to an instance using the command: <code>ssh -i {{ trainee.username }}.pem centos@&lt;PUBLIC_IP&gt;</code>.
+  You can then connect to an instance using the command: <code>ssh -i {{ trainee.username }}.pem {{ current_os.user }}@&lt;PUBLIC_IP&gt;</code>.
 </p>
 <p>If you are on Windows using PuTTY, you have also:</p>
 <ul>
@@ -66,7 +66,7 @@
 {% endif %}
 {% for instance in code_server_instances %}
   <li>
-    <a href="https://{{ hostvars[session_name + '-' + trainee.username + '-' + instance].public_dns_name }}:8998/?folder=/home/centos">https://{{ hostvars[session_name + '-' + trainee.username + '-' + instance].public_dns_name }}:8998/?folder=/home/centos</a>
+    <a href="https://{{ hostvars[session_name + '-' + trainee.username + '-' + instance].public_dns_name }}:8998/?folder=/home/{{ current_os.user }}">https://{{ hostvars[session_name + '-' + trainee.username + '-' + instance].public_dns_name }}:8998/?folder=/home/{{ current_os.user }}</a>
   </li>
 {% endfor %}
 </ul>
