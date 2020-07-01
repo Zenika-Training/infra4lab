@@ -2,6 +2,8 @@
 
 training_name: test
 strigo_class_id: Cmy4bD3y5rSqgbhKz
+strigo_materials:
+  - Zenika-Formation-demo-Slides.pdf
 
 #aws_region: eu-west-3
 aws_instances:

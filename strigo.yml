@@ -33,6 +33,60 @@
     - strigo
 
   tasks:
+
+    - name: Get materials checksums
+      stat:
+        path: "/PDF/{{ item }}"
+        checksum_algorithm: md5
+      loop: "{{ strigo_materials }}"
+      register: strigo_materials_stat
+
+    - name: Get class current presentations
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations"
+        return_content: yes
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+      register: current_presentations
+      failed_when: "current_presentations.json.result != 'success'"
+
+    - name: Create missing class presentations
+      #  Cannot use `uri` with `form-multipart` as it use `Content-Transfer-Encoding: base64` not handled by Strigo
+      command: |
+        curl --silent --request POST
+             --header 'Authorization: Bearer {{ strigo_token }}'
+             --form 'presentation=@/PDF/{{ item }}'
+             'https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations'
+      loop: "{{ strigo_materials | difference(current_presentations.json.data | map(attribute='filename')) | list }}"
+      register: create_presentation
+      failed_when: "create_presentation.rc != 0 or (create_presentation.stdout | from_json).result != 'success'"
+
+    - name: Delete obsolete class presentation
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations/{{ ((current_presentations.json.data | selectattr('filename', 'equalto', item.item)) | first).id }}"
+        method: DELETE
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+        status_code:
+          - 204
+      loop: "{{ strigo_materials_stat.results | selectattr('item', 'in', current_presentations.json.data | map(attribute='filename')) | list }}"
+      when: "item.stat.checksum != ((current_presentations.json.data | selectattr('filename', 'equalto', item.item)) | first).md5"
+
+    - name: Recreate obsolete class presentations
+      command: |
+        curl --silent --request POST
+             --header 'Authorization: Bearer {{ strigo_token }}'
+             --form 'presentation=@/PDF/{{ item.item }}'
+             'https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations'
+      loop: "{{ strigo_materials_stat.results | selectattr('item', 'in', current_presentations.json.data | map(attribute='filename')) | list }}"
+      when: "item.stat.checksum != ((current_presentations.json.data | selectattr('filename', 'equalto', item.item)) | first).md5"
+      register: update_presentation
+      failed_when: "update_presentation.rc != 0 or (update_presentation.stdout | from_json).result != 'success'"
+
     - name: Get class current resources
       uri:
         url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/resources"
