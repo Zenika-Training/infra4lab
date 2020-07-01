@@ -66,7 +66,7 @@
 {% endif %}
 {% for instance in code_server_instances %}
   <li>
-    <a href="https://{{ hostvars[session_name + '-' + trainee.username + '-' + instance].public_dns_name }}:8998/?folder=/home/{{ current_os.user }}">https://{{ hostvars[session_name + '-' + trainee.username + '-' + instance].public_dns_name }}:8998/?folder=/home/{{ current_os.user }}</a>
+    <a href="https://{{ hostvars[session_name + '-' + trainee.username + '-' + instance].public_dns_name }}:8998/">https://{{ hostvars[session_name + '-' + trainee.username + '-' + instance].public_dns_name }}:8998/</a>
   </li>
 {% endfor %}
 </ul>
