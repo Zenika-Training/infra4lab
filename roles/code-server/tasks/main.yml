@@ -147,3 +147,19 @@
   register: this
   changed_when: "'is already installed' not in this.stdout"
   loop: "{{ code_server_extensions }}"
+
+- name: Create code-server user config folder
+  file:
+    path: "~{{ current_os.user }}/.local/share/code-server/User"
+    state: directory
+    owner: "{{ current_os.user }}"
+    group: "{{ current_os.user }}"
+    mode: 0775
+
+- name: Create code-server user config
+  copy:
+    src: settings.json
+    dest: "~{{ current_os.user }}/.local/share/code-server/User/settings.json"
+    owner: "{{ current_os.user }}"
+    group: "{{ current_os.user }}"
+    mode: 0644
