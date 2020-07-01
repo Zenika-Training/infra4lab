@@ -12,7 +12,7 @@ current_session_authorized_ips: "{{ authorized_ips | default([]) | union([curren
 
 strigo_folder: "{{ training_folder }}/strigo"
 base_strigo_excluded_roles:
-  - code-server
+#  - code-server
   - guacamole
   - workspaces
 strigo_excluded_roles: "{{ base_strigo_excluded_roles if strigo | default(False) else [] }}"

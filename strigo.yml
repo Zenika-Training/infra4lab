@@ -59,7 +59,7 @@
           image_id: "{{ strigo_image_id }}"
           image_user: "{{ current_os.user }}"
           #instance_type: "{{ instance.type }}"
-          #webview_links:
+          webview_links: "{{ instance.strigo_webview_links | default([]) }}"
           userdata: |
             {{ lookup('file', strigo_folder + '/cloud-init-' + instance.name + '.sh') }}
       loop: "{{ aws_instances | rejectattr('name', 'in', current_resources.json.data | map(attribute='name')) | list }}"
@@ -73,7 +73,6 @@
       uri:
         url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/resources/{{ resource.id }}"
         method: PATCH
-        return_content: yes
         headers:
           Accept: application/json
           Content-Type: application/json
@@ -84,7 +83,7 @@
           image_id: "{{ strigo_image_id }}"
           image_user: "{{ current_os.user }}"
           #instance_type: "{{ (aws_instances | selectattr('name', 'equalto', resource.name) | first).type }}"
-          #webview_links:
+          webview_links: "{{ (aws_instances | selectattr('name', 'equalto', resource.name) | first).strigo_webview_links | default([]) }}"
           userdata: |
             {{ lookup('file', strigo_folder + '/cloud-init-' + resource.name + '.sh') }}
       loop: "{{ current_resources.json.data | selectattr('name', 'in', aws_instances | map(attribute='name')) | list }}"
@@ -98,7 +97,6 @@
       uri:
         url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/resources/{{ resource.id }}"
         method: DELETE
-        return_content: yes
         headers:
           Accept: application/json
           Content-Type: application/json

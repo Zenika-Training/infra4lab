@@ -7,6 +7,9 @@ strigo_class_id: Cmy4bD3y5rSqgbhKz
 aws_instances:
   - name: node0
     type: t2.micro
+    strigo_webview_links:
+      - name: Code-Server
+        url: http://instance.autolab.strigo.io:8998
   - name: node1
     type: t2.micro
   - name: node2
