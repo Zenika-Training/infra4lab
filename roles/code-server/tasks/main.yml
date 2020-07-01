@@ -61,9 +61,27 @@
 
 - name: Link code-server binary
   file:
-    src: /usr/local/lib/code-server/code-server
+    src: /usr/local/lib/code-server/bin/code-server
     dest: /usr/local/bin/code-server
     state: link
+
+- name: Create code-server config folder
+  file:
+    path: "~{{ current_os.user }}/.config/code-server"
+    state: directory
+    owner: "{{ current_os.user }}"
+    group: "{{ current_os.user }}"
+    mode: 0755
+
+- name: Create code-server config
+  template:
+    src: config.yaml
+    dest: "~{{ current_os.user }}/.config/code-server/config.yaml"
+    owner: "{{ current_os.user }}"
+    group: "{{ current_os.user }}"
+    mode: 0644
+  notify:
+    - Restart code-server
 
 - name: Install openssl dependency
   package:
@@ -72,7 +90,7 @@
 
 - name: Generate code-server key
   openssl_privatekey:
-    path: "~{{ current_os.user }}/.code-server.key"
+    path: "~{{ current_os.user }}/.config/code-server/code-server.key"
     mode: 0400
   become: no
   notify:
@@ -80,8 +98,8 @@
 
 - name: Generate code-server CSR
   openssl_csr:
-    path: "~{{ current_os.user }}/.code-server.csr"
-    privatekey_path: "~{{ current_os.user }}/.code-server.key"
+    path: "~{{ current_os.user }}/.config/code-server/code-server.csr"
+    privatekey_path: "~{{ current_os.user }}/.config/code-server/code-server.key"
     common_name: "{{ public_dns_name }}"
     subject_alt_name:
       - "DNS:{{ public_dns_name }}"
@@ -90,9 +108,9 @@
 
 - name: Generate code-server certificate
   openssl_certificate:
-    path: "~{{ current_os.user }}/.code-server.crt"
-    csr_path: "~{{ current_os.user }}/.code-server.csr"
-    privatekey_path: "~{{ current_os.user }}/.code-server.key"
+    path: "~{{ current_os.user }}/.config/code-server/code-server.crt"
+    csr_path: "~{{ current_os.user }}/.config/code-server/code-server.csr"
+    privatekey_path: "~{{ current_os.user }}/.config/code-server/code-server.key"
     selfsigned_not_after: +5d
     provider: selfsigned
   become: no
@@ -129,3 +147,19 @@
   register: this
   changed_when: "'is already installed' not in this.stdout"
   loop: "{{ code_server_extensions }}"
+
+- name: Create code-server user config folder
+  file:
+    path: "~{{ current_os.user }}/.local/share/code-server/User"
+    state: directory
+    owner: "{{ current_os.user }}"
+    group: "{{ current_os.user }}"
+    mode: 0775
+
+- name: Create code-server user config
+  copy:
+    src: settings.json
+    dest: "~{{ current_os.user }}/.local/share/code-server/User/settings.json"
+    owner: "{{ current_os.user }}"
+    group: "{{ current_os.user }}"
+    mode: 0644

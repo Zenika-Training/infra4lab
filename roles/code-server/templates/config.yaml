@@ -1,0 +1,6 @@
+bind-addr: 0.0.0.0:{{ code_server_port }}
+auth: password
+password: {{ session_name }}
+cert: /home/{{ current_os.user }}/.config/code-server/code-server.crt
+cert-key: /home/{{ current_os.user }}/.config/code-server/code-server.key
+disable-telemetry: true

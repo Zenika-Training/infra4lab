@@ -1,0 +1,6 @@
+{
+  "git.ignoreLegacyWarning": true,
+  "files.exclude": {
+      "**/.*": true
+  }
+}
