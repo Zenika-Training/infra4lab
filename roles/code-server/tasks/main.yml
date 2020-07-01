@@ -61,7 +61,7 @@
 
 - name: Link code-server binary
   file:
-    src: /usr/local/lib/code-server/code-server
+    src: /usr/local/lib/code-server/bin/code-server
     dest: /usr/local/bin/code-server
     state: link
 
