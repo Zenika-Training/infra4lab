@@ -44,7 +44,7 @@ module "vpc" {
   }
 }
 
-{% set cidr_blocks = current_session_authorized_ips | map('regex_replace', '$', '/32') | list | to_json %}
+{% set cidr_blocks = (['0.0.0.0/0'] if open_worldwide | default(False) else (current_session_authorized_ips | map('regex_replace', '$', '/32') | list)) | to_json %}
 resource "aws_security_group" "default_sg" {
   name        = "{{ session_name }}"
   description = "Allow inbound traffic"
