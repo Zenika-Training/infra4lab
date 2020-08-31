@@ -54,6 +54,17 @@ Existing roles:
 
 Create any extra role you want in a `roles` folder in your training.
 
+## VMs access restriction
+
+By default VMs access is restricted to the public IP of the infra4lab machine (as provided by https://ifconfig.me/). This should be enough if you are on the same network as the trainees (like for inter sessions).
+
+In case it's not enough:
+
+- if the trainees are on another network, you can use `authorized_ips` configuration to add their public IP (you can ask them the result of https://ifconfig.me/).
+- if you want to fully open the VMs, you can set the `open_worldwide` configuration to `true`.
+
+Those configurations are documented in the [session extra configuration](#session-extra-configuration) section.
+
 ## Session extra configuration
 
 When asked for session extra config, you can fill `sessions/current/group_vars/extra.yml`.
@@ -62,7 +73,8 @@ You can also fill it afterwards and relaunch the tool.
 
 Possible configurations are:
 
-- `authorized_ips`: a list of IP addresses to authorize to access VMs
+- `authorized_ips`: a list of IP addresses to authorize to access VMs, e.g. `['1.2.3.4', '5.6.7.8']`. Defaults to `[]`
+- `open_worldwide`: to open VMs worldwide, e.g. `true`. Defaults to `false`
 
 ## Create VMs
 
