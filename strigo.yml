@@ -34,6 +34,35 @@
 
   tasks:
 
+    - block:
+
+        - name: Create Strigo class
+          uri:
+            url: "https://app.strigo.io/api/v1/classes"
+            method: POST
+            return_content: yes
+            headers:
+              Accept: application/json
+              Content-Type: application/json
+              Authorization: "Bearer {{ strigo_token }}"
+            body_format: json
+            body:
+              name: "{{ training_name }}"
+          register: create_class
+          failed_when: "create_class.json.result != 'success'"
+
+        - name: Set new Strigo class ID
+          lineinfile:
+            path: "{{ training_vars_file }}"
+            line: "strigo_class_id: {{ create_class.json.data.id }}"
+            insertafter: '^training_name: '
+
+        - name: Reload training vars file
+          include_vars:
+            file: "{{ training_vars_file }}"
+
+      when: strigo_class_id is undefined
+
     - name: Get materials checksums
       stat:
         path: "/PDF/{{ item.presentation }}"
