@@ -36,10 +36,12 @@
 
     - name: Get materials checksums
       stat:
-        path: "/PDF/{{ item }}"
+        path: "/PDF/{{ item.presentation }}"
         checksum_algorithm: md5
       loop: "{{ strigo_materials }}"
       register: strigo_materials_stat
+      loop_control:
+        label: "{{ item.presentation }}"
 
     - name: Get class current presentations
       uri:
@@ -57,15 +59,17 @@
       command: |
         curl --silent --request POST
              --header 'Authorization: Bearer {{ strigo_token }}'
-             --form 'presentation=@/PDF/{{ item }}'
+             --form 'presentation=@/PDF/{{ item.presentation }}'
              'https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations'
-      loop: "{{ strigo_materials | difference(current_presentations.json.data | map(attribute='filename')) | list }}"
+      loop: "{{ strigo_materials | rejectattr('presentation', 'in', current_presentations.json.data | map(attribute='filename')) | list }}"
       register: create_presentation
       failed_when: "create_presentation.rc != 0 or (create_presentation.stdout | from_json).result != 'success'"
+      loop_control:
+        label: "{{ item.presentation }}"
 
     - name: Delete obsolete class presentation
       uri:
-        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations/{{ ((current_presentations.json.data | selectattr('filename', 'equalto', item.item)) | first).id }}"
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations/{{ ((current_presentations.json.data | selectattr('filename', 'equalto', item.item.presentation)) | first).id }}"
         method: DELETE
         headers:
           Accept: application/json
@@ -73,19 +77,55 @@
           Authorization: "Bearer {{ strigo_token }}"
         status_code:
           - 204
-      loop: "{{ strigo_materials_stat.results | selectattr('item', 'in', current_presentations.json.data | map(attribute='filename')) | list }}"
-      when: "item.stat.checksum != ((current_presentations.json.data | selectattr('filename', 'equalto', item.item)) | first).md5"
+      loop: "{{ strigo_materials_stat.results | selectattr('item.presentation', 'in', current_presentations.json.data | map(attribute='filename')) | list }}"
+      when: "item.stat.checksum != ((current_presentations.json.data | selectattr('filename', 'equalto', item.item.presentation)) | first).md5"
+      loop_control:
+        label: "{{ item.item.presentation }}"
 
     - name: Recreate obsolete class presentations
       command: |
         curl --silent --request POST
              --header 'Authorization: Bearer {{ strigo_token }}'
-             --form 'presentation=@/PDF/{{ item.item }}'
+             --form 'presentation=@/PDF/{{ item.item.presentation }}'
              'https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations'
-      loop: "{{ strigo_materials_stat.results | selectattr('item', 'in', current_presentations.json.data | map(attribute='filename')) | list }}"
-      when: "item.stat.checksum != ((current_presentations.json.data | selectattr('filename', 'equalto', item.item)) | first).md5"
+      loop: "{{ strigo_materials_stat.results | selectattr('item.presentation', 'in', current_presentations.json.data | map(attribute='filename')) | list }}"
+      when: "item.stat.checksum != ((current_presentations.json.data | selectattr('filename', 'equalto', item.item.presentation)) | first).md5"
       register: update_presentation
       failed_when: "update_presentation.rc != 0 or (update_presentation.stdout | from_json).result != 'success'"
+      loop_control:
+        label: "{{ item.item.presentation }}"
+
+    - name: Get up-to-date class current presentations
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations"
+        return_content: yes
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+      register: current_presentations
+      failed_when: "current_presentations.json.result != 'success'"
+
+    - name: Create/Update notes of class presentations
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations/{{ item.id }}/notes"
+        method: POST
+        return_content: yes
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+        body_format: json
+        body:
+          notes: "{{ (strigo_materials | selectattr('presentation', 'equalto', item.filename) | first).notes }}"
+      loop: "{{ current_presentations.json.data }}"
+      when:
+        - strigo_materials | selectattr('presentation', 'equalto', item.filename) | list | length != 0
+        - "'notes' in strigo_materials | selectattr('presentation', 'equalto', item.filename) | first"
+      register: update_presentation_notes
+      failed_when: "update_presentation_notes.json.result != 'success'"
+      loop_control:
+        label: "{{ item.filename }}"
 
     - name: Get class current resources
       uri:
