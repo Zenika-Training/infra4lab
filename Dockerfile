@@ -15,7 +15,7 @@ RUN apk add --no-cache openssh python3 py3-pip py3-jinja2 py3-yaml py3-cryptogra
 ENV BOTO_USE_ENDPOINT_HEURISTICS=True
 
 # Terraform
-ENV TERRAFORM_VERSION=0.12.26
+ENV TERRAFORM_VERSION=0.13.4
 RUN apk add --no-cache git ca-certificates \
  && wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
  && unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin/ \

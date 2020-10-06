@@ -31,7 +31,7 @@ roles:
     target:
       - node0
     vars:
-      kubernetes_version: 1.18
+      kubernetes_version: 1.19
       install_kubeadm: True
       install_minikube: True
       install_kubelet: True
