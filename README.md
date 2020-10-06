@@ -20,6 +20,10 @@ For better security it is advised to use [named profiles](https://docs.aws.amazo
     ```
 - Set `AWS_PROFILE` to the name of the profile if you use something else than `zenika-training`
 
+### Accept CentOS Terms and Conditions
+
+Open the [CentOS 7 subscription page](https://aws.amazon.com/marketplace/server/procurement?productId=b7ee8a69-ee97-4a49-9e68-afaee216db2e) and accept the terms.
+
 ### Configure Amazon Simple Email Service
 
 Email to trainees is sent using [Amazon Simple Email Service](https://aws.amazon.com/ses/).
