@@ -1,10 +1,14 @@
 ---
 
+- name: Inject context
+  template:
+    src: context.sh
+    dest: /etc/profile.d/infra4lab_context.sh
+
 - name: Install EPEL repos
   package:
     name: epel-release
   when: ansible_facts.distribution == 'CentOS'
-
 
 - block:
 
