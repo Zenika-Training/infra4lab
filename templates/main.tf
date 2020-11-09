@@ -1,7 +1,6 @@
 # Configure the AWS Provider
 provider "aws" {
   region = "{{ aws_region }}"
-  allowed_account_ids = ["{{ aws_account_id }}"]
 }
 
 data "aws_caller_identity" "current" {}
@@ -30,8 +29,8 @@ module "vpc" {
   name = "vpc"
   cidr = "10.0.0.0/16"
 
-  azs             = "${data.aws_availability_zones.availability_zones.names}"
-  public_subnets  = [for az in data.aws_availability_zones.availability_zones.zone_ids : cidrsubnet("10.0.0.0/16", 8, 101 + index(data.aws_availability_zones.availability_zones.zone_ids, az))]
+  azs            = data.aws_availability_zones.availability_zones.names
+  public_subnets = [for az in data.aws_availability_zones.availability_zones.zone_ids : cidrsubnet("10.0.0.0/16", 8, 101 + index(data.aws_availability_zones.availability_zones.zone_ids, az))]
 
   enable_nat_gateway   = true
   enable_vpn_gateway   = false
@@ -40,7 +39,7 @@ module "vpc" {
 
   tags = {
     Name   = "{{ session_name }}"
-    Caller = "${data.aws_caller_identity.current.arn}"
+    Caller = data.aws_caller_identity.current.arn
   }
 }
 
@@ -66,7 +65,7 @@ resource "aws_security_group" "default_sg" {
   }
   tags = {
     Name   = "{{ session_name }}"
-    Caller = "${data.aws_caller_identity.current.arn}"
+    Caller = data.aws_caller_identity.current.arn
   }
 }
 
@@ -95,12 +94,12 @@ resource "aws_instance" "{{ user }}_{{ instance.name }}" {
   key_name               = aws_key_pair.{{ user }}_aws_keypair.key_name
   ami                    = data.aws_ami.ami.id
   instance_type          = "{{ instance.type }}"
-  vpc_security_group_ids = ["${aws_security_group.default_sg.id}", "${module.vpc.default_security_group_id}"]
+  vpc_security_group_ids = [aws_security_group.default_sg.id, module.vpc.default_security_group_id]
   subnet_id              = module.vpc.public_subnets[{{ loop.index0 }} % length(module.vpc.public_subnets)]
 
   tags = {
     Name     = "{{ session_name }}-{{ user }}-{{ instance.name }}"
-    Caller   = "${data.aws_caller_identity.current.arn}"
+    Caller   = data.aws_caller_identity.current.arn
     Hostname = "{{ instance.name }}"
     Training = "{{ training_name }}"
     Session  = "{{ session_name }}"
