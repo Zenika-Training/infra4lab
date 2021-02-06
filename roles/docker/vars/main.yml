@@ -1,3 +1,6 @@
 ---
 
 docker_version: "{{ role_vars.docker_version | default() }}"
+
+compose_version: "{{ role_vars.compose_version | default() }}"
+install_compose: "{{ role_vars.install_compose | default(False) }}"

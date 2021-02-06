@@ -27,6 +27,7 @@ roles:
       - node0
     vars:
       docker_version: 19.03  # or '5:19.03' for Ubuntu
+      install_compose: True
   - name: kubernetes
     target:
       - node0

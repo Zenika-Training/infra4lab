@@ -46,3 +46,26 @@
     name: "{{ current_os.user }}"
     groups:
       - docker
+
+- name: "Install compose"
+  block:
+    - name: Compute latest version
+      block:
+        - name: Get latest release
+          uri:
+            url: https://api.github.com/repos/docker/compose/releases/latest
+          register: compose_latest_release
+        - name: Compute latest version name
+          set_fact:
+            compose_version: "{{ compose_latest_release.json.name }}"
+      when: not compose_version
+    - name: "Download compose {{ compose_version }}"
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/{{ compose_version }}/docker-compose-Linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: 0755
+    - name: Get completion file
+      get_url:
+        url: "https://raw.githubusercontent.com/docker/compose/{{ compose_version }}/contrib/completion/bash/docker-compose"
+        dest: /etc/bash_completion.d/docker-compose
+  when: install_compose
