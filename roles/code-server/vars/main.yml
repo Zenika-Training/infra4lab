@@ -4,8 +4,14 @@ distribution_python_cryptography:
   CentOS: python2-cryptography
   Ubuntu: python3-cryptography
 
+distribution_package_name_sep:
+  CentOS: '-'
+  Ubuntu: '_'
+distribution_package_ext:
+  CentOS: rpm
+  Ubuntu: deb
+
 code_server_version: "{{ role_vars.code_server_version | default(None) }}"
-code_server_tag_name: "{{ role_vars.code_server_tag_name | default(code_server_version) }}"
 
 code_server_port: 8998
 

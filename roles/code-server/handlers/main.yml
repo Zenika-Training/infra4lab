@@ -1,12 +1,8 @@
 ---
 
-- name: Reload systemd
-  systemd:
-    daemon_reload: yes
-
 - name: Restart code-server service
   service:
-    name: code-server
+    name: "code-server@{{ current_os.user }}"
     state: restarted
   listen:
     - Restart code-server
