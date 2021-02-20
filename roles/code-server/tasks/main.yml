@@ -29,15 +29,13 @@
 
 - name: Compute latest version
   block:
-    - name: Get releases
+    - name: Get latest release
       uri:
-        url: https://api.github.com/repos/cdr/code-server/releases
-      register: code_server_releases
-    - name: Compute latest usable version
+        url: https://api.github.com/repos/cdr/code-server/releases/latest
+      register: code_server_latest_release
+    - name: Extract version
       set_fact:
-        code_server_version: "{{ (code_server_releases.json | to_json | from_json | json_query(query)).name }}"
-      vars:
-        query: "[?starts_with(name, 'v')] | [0]"
+        code_server_version: "{{ code_server_latest_release.json.name }}"
   when: not code_server_version
 
 - name: Clean version
@@ -46,24 +44,22 @@
 
 - name: Check minimal version
   assert:
-    that: code_server_version is version('3.2', '>=')
-    msg: code-server version must be >= 3.2.0
+    that: code_server_version is version('3.5', '>=')
+    msg: code-server version must be >= 3.5.0
 
-- name: "Extract code-server {{ code_server_version }}"
-  unarchive:
-    src: "https://github.com/cdr/code-server/releases/download/v{{ code_server_version }}/code-server-{{ code_server_version }}-linux-amd64.tar.gz"
-    remote_src: yes
-    dest: /usr/local/lib
-    extra_opts:
-      - --transform
-      - "s/-{{ code_server_version }}-linux-amd64//"
-    creates: /usr/local/lib/code-server/code-server
+- name: "Download code-server {{ code_server_version }}"
+  get_url:
+    url: "https://github.com/cdr/code-server/releases/download/v{{ code_server_version }}/code-server{{ distribution_package_name_sep[ansible_facts.distribution] }}{{ code_server_version }}{{ distribution_package_name_sep[ansible_facts.distribution] }}amd64.{{ distribution_package_ext[ansible_facts.distribution] }}"
+    dest: "/tmp/code-server.{{ distribution_package_ext[ansible_facts.distribution] }}"
 
-- name: Link code-server binary
-  file:
-    src: /usr/local/lib/code-server/bin/code-server
-    dest: /usr/local/bin/code-server
-    state: link
+- name: "Install code-server {{ code_server_version }}"
+  yum:
+    name: "/tmp/code-server.{{ distribution_package_ext[ansible_facts.distribution] }}"
+  when: ansible_facts.distribution == 'CentOS'
+- name: "Install code-server {{ code_server_version }}"
+  apt:
+    deb: "/tmp/code-server.{{ distribution_package_ext[ansible_facts.distribution] }}"
+  when: ansible_facts.distribution == 'Ubuntu'
 
 - name: Create code-server config folder
   file:
@@ -117,32 +113,18 @@
   notify:
     - Restart code-server
 
-- name: Install code-server service
-  template:
-    src: code-server.service
-    dest: /usr/lib/systemd/system/code-server.service
-    owner: root
-    group: root
-    mode: 0644
-  notify:
-    - Reload systemd
-    - Restart code-server
-
 - name: Flush handlers
   meta: flush_handlers
 
 - name: Launch and enable code-server service
   service:
-    name: code-server
+    name: "code-server@{{ current_os.user }}"
     state: started
     enabled: true
 
 - name: Install extensions
   command: |
     code-server --install-extension {{ item }}
-  environment:
-    SERVICE_URL: https://marketplace.visualstudio.com/_apis/public/gallery
-    NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-bundle.crt
   become: no
   register: this
   changed_when: "'is already installed' not in this.stdout"
