@@ -1,0 +1,232 @@
+---
+
+- name: Create cloud-init files
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - "{{ training_vars_file }}"
+  tags:
+    - cloud-init
+
+  tasks:
+
+    - name: Create strigo folder
+      file:
+        path: "{{ strigo_folder }}"
+        state: directory
+    - name: Generate cloud-init files
+      template:
+        src: cloud-init.sh
+        dest: "{{ strigo_folder }}/cloud-init-{{ instance }}.sh"
+      loop: "{{ aws_instances | map(attribute='name') | list }}"
+      loop_control:
+        loop_var: instance
+
+- name: Update class resources on Strigo
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - "{{ training_vars_file }}"
+  vars:
+    strigo_token: "{{ lookup('env', 'STRIGO_ORG_ID') }}:{{ lookup('env', 'STRIGO_API_KEY') }}"
+  tags:
+    - strigo
+
+  tasks:
+
+    - block:
+
+        - name: Create Strigo class
+          uri:
+            url: "https://app.strigo.io/api/v1/classes"
+            method: POST
+            return_content: yes
+            headers:
+              Accept: application/json
+              Content-Type: application/json
+              Authorization: "Bearer {{ strigo_token }}"
+            body_format: json
+            body:
+              name: "{{ training_name }}"
+          register: create_class
+          failed_when: "create_class.json.result != 'success'"
+
+        - name: Set new Strigo class ID
+          lineinfile:
+            path: "{{ training_vars_file }}"
+            line: "strigo_class_id: {{ create_class.json.data.id }}"
+            insertafter: '^training_name: '
+
+        - name: Reload training vars file
+          include_vars:
+            file: "{{ training_vars_file }}"
+
+      when: strigo_class_id is undefined
+
+    - name: Get materials checksums
+      stat:
+        path: "/PDF/{{ item.presentation }}"
+        checksum_algorithm: md5
+      loop: "{{ strigo_materials }}"
+      register: strigo_materials_stat
+      loop_control:
+        label: "{{ item.presentation }}"
+
+    - name: Get class current presentations
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations"
+        return_content: yes
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+      register: current_presentations
+      failed_when: "current_presentations.json.result != 'success'"
+
+    - name: Create missing class presentations
+      #  Cannot use `uri` with `form-multipart` as it use `Content-Transfer-Encoding: base64` not handled by Strigo
+      command: |
+        curl --silent --request POST
+             --header 'Authorization: Bearer {{ strigo_token }}'
+             --form 'presentation=@/PDF/{{ item.presentation }}'
+             'https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations'
+      loop: "{{ strigo_materials | rejectattr('presentation', 'in', current_presentations.json.data | map(attribute='filename')) | list }}"
+      register: create_presentation
+      failed_when: "create_presentation.rc != 0 or (create_presentation.stdout | from_json).result != 'success'"
+      loop_control:
+        label: "{{ item.presentation }}"
+
+    - name: Delete obsolete class presentation
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations/{{ ((current_presentations.json.data | selectattr('filename', 'equalto', item.item.presentation)) | first).id }}"
+        method: DELETE
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+        status_code:
+          - 204
+      loop: "{{ strigo_materials_stat.results | selectattr('item.presentation', 'in', current_presentations.json.data | map(attribute='filename')) | list }}"
+      when: "item.stat.checksum != ((current_presentations.json.data | selectattr('filename', 'equalto', item.item.presentation)) | first).md5"
+      loop_control:
+        label: "{{ item.item.presentation }}"
+
+    - name: Recreate obsolete class presentations
+      command: |
+        curl --silent --request POST
+             --header 'Authorization: Bearer {{ strigo_token }}'
+             --form 'presentation=@/PDF/{{ item.item.presentation }}'
+             'https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations'
+      loop: "{{ strigo_materials_stat.results | selectattr('item.presentation', 'in', current_presentations.json.data | map(attribute='filename')) | list }}"
+      when: "item.stat.checksum != ((current_presentations.json.data | selectattr('filename', 'equalto', item.item.presentation)) | first).md5"
+      register: update_presentation
+      failed_when: "update_presentation.rc != 0 or (update_presentation.stdout | from_json).result != 'success'"
+      loop_control:
+        label: "{{ item.item.presentation }}"
+
+    - name: Get up-to-date class current presentations
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations"
+        return_content: yes
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+      register: current_presentations
+      failed_when: "current_presentations.json.result != 'success'"
+
+    - name: Create/Update notes of class presentations
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/presentations/{{ item.id }}/notes"
+        method: POST
+        return_content: yes
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+        body_format: json
+        body:
+          notes: "{{ (strigo_materials | selectattr('presentation', 'equalto', item.filename) | first).notes }}"
+      loop: "{{ current_presentations.json.data }}"
+      when:
+        - strigo_materials | selectattr('presentation', 'equalto', item.filename) | list | length != 0
+        - "'notes' in strigo_materials | selectattr('presentation', 'equalto', item.filename) | first"
+      register: update_presentation_notes
+      failed_when: "update_presentation_notes.json.result != 'success'"
+      loop_control:
+        label: "{{ item.filename }}"
+
+    - name: Get class current resources
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/resources"
+        return_content: yes
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+      register: current_resources
+
+    - name: Create missing class resources
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/resources"
+        method: POST
+        return_content: yes
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+        body_format: json
+        body:
+          name: "{{ instance.name }}"
+          ec2_region: "eu-central-1"
+          image_id: "{{ strigo_image_id }}"
+          image_user: "{{ current_os.user }}"
+          #instance_type: "{{ instance.type }}"
+          webview_links: "{{ instance.strigo_webview_links | default([]) }}"
+          userdata: |
+            {{ lookup('file', strigo_folder + '/cloud-init-' + instance.name + '.sh') }}
+      loop: "{{ aws_instances | rejectattr('name', 'in', current_resources.json.data | map(attribute='name')) | list }}"
+      register: create_resource
+      failed_when: "create_resource.json.result != 'success'"
+      loop_control:
+        loop_var: instance
+        label: "{{ instance.name }}"
+
+    - name: Update class resources
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/resources/{{ resource.id }}"
+        method: PATCH
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+        body_format: json
+        body:
+          name: "{{ resource.name }}"
+          image_id: "{{ strigo_image_id }}"
+          image_user: "{{ current_os.user }}"
+          #instance_type: "{{ (aws_instances | selectattr('name', 'equalto', resource.name) | first).type }}"
+          webview_links: "{{ (aws_instances | selectattr('name', 'equalto', resource.name) | first).strigo_webview_links | default([]) }}"
+          userdata: |
+            {{ lookup('file', strigo_folder + '/cloud-init-' + resource.name + '.sh') }}
+      loop: "{{ current_resources.json.data | selectattr('name', 'in', aws_instances | map(attribute='name')) | list }}"
+      register: update_resource
+      failed_when: "update_resource.json.result != 'success'"
+      loop_control:
+        loop_var: resource
+        label: "{{ resource.name }}"
+
+    - name: Delete extra class resources
+      uri:
+        url: "https://app.strigo.io/api/v1/classes/{{ strigo_class_id }}/resources/{{ resource.id }}"
+        method: DELETE
+        headers:
+          Accept: application/json
+          Content-Type: application/json
+          Authorization: "Bearer {{ strigo_token }}"
+        status_code:
+          - 204
+      loop: "{{ current_resources.json.data | rejectattr('name', 'in', aws_instances | map(attribute='name')) | list }}"
+      loop_control:
+        loop_var: resource
+        label: "{{ resource.name }}"

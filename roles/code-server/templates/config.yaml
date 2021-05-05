@@ -1,4 +1,4 @@
-bind-addr: 0.0.0.0:{{ code_server_port }}
+bind-addr: {% if strigo | default(False) | bool %}0.0.0.0{% else %}{{ ansible_default_ipv4.address }}{% endif %}:{{ code_server_port }}
 auth: password
 password: {{ session_name }}
 cert: /home/{{ current_os.user }}/.config/code-server/code-server.crt
