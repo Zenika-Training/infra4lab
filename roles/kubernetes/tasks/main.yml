@@ -59,7 +59,7 @@
 - name: "Install minikube {{ minikube_version }}"
   block:
     - name: Install minikube dependencies
-      yum:
+      package:
         name: "{{ distribution_minikube_dependencies[ansible_facts.distribution] }}"
     - name: "Download minikube {{ minikube_version }}"
       get_url:
