@@ -10,7 +10,7 @@ aws_instances:
     type: t2.micro
   - name: node2
     type: t2.micro
-#os: ubuntu
+os: ubuntu
 
 roles:
   - name: guacamole
@@ -26,13 +26,13 @@ roles:
     target:
       - node0
     vars:
-      docker_version: 19.03  # or '5:19.03' for Ubuntu
+      docker_version: '5:20.10' # or 20.10 for CentOS
       install_compose: True
   - name: kubernetes
     target:
       - node0
     vars:
-      kubernetes_version: 1.19
+      kubernetes_version: 1.21
       install_kubeadm: True
       install_minikube: True
       install_kubelet: True
