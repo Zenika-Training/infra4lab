@@ -1,0 +1,32 @@
+version: 2.1
+
+orbs:
+  docker: circleci/docker@1.6.0
+
+workflows:
+  version: 2.0
+
+  build:
+    jobs:
+      - docker/publish: &docker-build-params
+          name: build-docker-image
+          executor: docker/docker
+          use-remote-docker: yes
+          remote-docker-dlc: yes
+          image: zenika/infra4lab
+          deploy: no
+          filters:
+            branches:
+              ignore: main
+      - docker/publish:
+          <<: *docker-build-params
+          name: build-and-publish-docker-image
+          tag: latest
+          deploy: yes
+          update-description: yes
+          docker-username: DOCKERHUB_USERNAME
+          docker-password: DOCKERHUB_PASS
+          filters:
+            branches:
+              only: main
+          context: docker-hub-zenika
